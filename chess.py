@@ -2,6 +2,7 @@ import pygame
 import os
 import random
 import time
+import sys
 #import datetime
 c_path = os.getcwd()
 if c_path[-5:] == "Saves":
@@ -14,13 +15,17 @@ pygame.init()
 display_info = pygame.display.Info()
 WIDTH, HEIGHT = display_info.current_w, display_info.current_h
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+#WIN = pygame.display.set_mode((1920, 1080))
 FPS = 45
 AI_MODE = True
+FULL_AI_MODE = True
+AI_COLOUR = "black"
 ALPHA = 64
 pygame.display.set_caption("Chess")
 MIN_WH = min(WIDTH, HEIGHT)
 DIV = 2
 wh = MIN_WH * 0.75
+SMALL_IS = 60
 #BOARD_rect = pygame.Rect(WIDTH // div -  wh // 2, (HEIGHT // div - wh // 2) + WIDTH // 25, wh, wh)
 BOARD_rect = pygame.Rect(WIDTH // DIV -  wh // 2, (HEIGHT // DIV - wh // 2) + WIDTH // 50, wh, wh)
 PIECE_WIDTH, PIECE_HEIGHT = BOARD_rect.w // 8, BOARD_rect.h // 8
@@ -41,40 +46,88 @@ CHESS_BOARD_ALPHA_IMAGE.set_alpha(ALPHA)
 
 WHITE_PAWN_IMAGE = pygame.image.load(os.path.join("Assets", "WHITE_PAWN.png"))
 WHITE_PAWN_IMAGE = pygame.transform.smoothscale(WHITE_PAWN_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT)).convert_alpha()
+WHITE_PAWN_ALPHA = WHITE_PAWN_IMAGE.copy()
+WHITE_PAWN_ALPHA = WHITE_PAWN_ALPHA.convert_alpha()
+WHITE_PAWN_ALPHA.set_alpha(ALPHA)
+WHITE_PAWN_SMALL = pygame.transform.smoothscale(WHITE_PAWN_IMAGE.copy(), (SMALL_IS, SMALL_IS))
 
 WHITE_BISHOP_IMAGE = pygame.image.load(os.path.join("Assets", "WHITE_BISHOP.png"))
 WHITE_BISHOP_IMAGE = pygame.transform.smoothscale(WHITE_BISHOP_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT)).convert_alpha()
+WHITE_BISHOP_ALPHA = WHITE_BISHOP_IMAGE.copy()
+WHITE_BISHOP_ALPHA = WHITE_BISHOP_ALPHA.convert_alpha()
+WHITE_BISHOP_ALPHA.set_alpha(ALPHA)
+WHITE_BISHOP_SMALL = pygame.transform.smoothscale(WHITE_BISHOP_IMAGE.copy(), (SMALL_IS, SMALL_IS))
 
 WHITE_KNIGHT_IMAGE = pygame.image.load(os.path.join("Assets", "WHITE_KNIGHT.png"))
 WHITE_KNIGHT_IMAGE = pygame.transform.smoothscale(WHITE_KNIGHT_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT)).convert_alpha()
+WHITE_KNIGHT_ALPHA = WHITE_KNIGHT_IMAGE.copy()
+WHITE_KNIGHT_ALPHA = WHITE_KNIGHT_ALPHA.convert_alpha()
+WHITE_KNIGHT_ALPHA.set_alpha(ALPHA)
+WHITE_KNIGHT_SMALL = pygame.transform.smoothscale(WHITE_KNIGHT_IMAGE.copy(), (SMALL_IS, SMALL_IS))
 
 WHITE_ROOK_IMAGE = pygame.image.load(os.path.join("Assets", "WHITE_ROOK.png"))
 WHITE_ROOK_IMAGE = pygame.transform.smoothscale(WHITE_ROOK_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT)).convert_alpha()
+WHITE_ROOK_ALPHA = WHITE_ROOK_IMAGE.copy()
+WHITE_ROOK_ALPHA = WHITE_ROOK_ALPHA.convert_alpha()
+WHITE_ROOK_ALPHA.set_alpha(ALPHA)
+WHITE_ROOK_SMALL = pygame.transform.smoothscale(WHITE_ROOK_IMAGE.copy(), (SMALL_IS, SMALL_IS))
 
 WHITE_KING_IMAGE = pygame.image.load(os.path.join("Assets", "WHITE_KING.png"))
 WHITE_KING_IMAGE = pygame.transform.smoothscale(WHITE_KING_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT)).convert_alpha()
+WHITE_KING_ALPHA = WHITE_KING_IMAGE.copy()
+WHITE_KING_ALPHA = WHITE_KING_ALPHA.convert_alpha()
+WHITE_KING_ALPHA.set_alpha(ALPHA)
+WHITE_KING_SMALL = pygame.transform.smoothscale(WHITE_KING_IMAGE.copy(), (SMALL_IS, SMALL_IS))
 
 WHITE_QUEEN_IMAGE = pygame.image.load(os.path.join("Assets", "WHITE_QUEEN.png"))
 WHITE_QUEEN_IMAGE = pygame.transform.smoothscale(WHITE_QUEEN_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT)).convert_alpha()
+WHITE_QUEEN_ALPHA = WHITE_QUEEN_IMAGE.copy()
+WHITE_QUEEN_ALPHA = WHITE_QUEEN_ALPHA.convert_alpha()
+WHITE_QUEEN_ALPHA.set_alpha(ALPHA)
+WHITE_QUEEN_SMALL = pygame.transform.smoothscale(WHITE_QUEEN_IMAGE.copy(), (SMALL_IS, SMALL_IS))
 
 
 BLACK_PAWN_IMAGE = pygame.image.load(os.path.join("Assets", "BLACK_PAWN.png"))
 BLACK_PAWN_IMAGE = pygame.transform.smoothscale(BLACK_PAWN_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT)).convert_alpha()
+BLACK_PAWN_ALPHA = BLACK_PAWN_IMAGE.copy()
+BLACK_PAWN_ALPHA = BLACK_PAWN_ALPHA.convert_alpha()
+BLACK_PAWN_ALPHA.set_alpha(ALPHA)
+BLACK_PAWN_SMALL = pygame.transform.smoothscale(BLACK_PAWN_IMAGE.copy(), (SMALL_IS, SMALL_IS))
 
 BLACK_BISHOP_IMAGE = pygame.image.load(os.path.join("Assets", "BLACK_BISHOP.png"))
 BLACK_BISHOP_IMAGE = pygame.transform.smoothscale(BLACK_BISHOP_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT)).convert_alpha()
+BLACK_BISHOP_ALPHA = BLACK_BISHOP_IMAGE.copy()
+BLACK_BISHOP_ALPHA = BLACK_BISHOP_ALPHA.convert_alpha()
+BLACK_BISHOP_ALPHA.set_alpha(ALPHA)
+BLACK_BISHOP_SMALL = pygame.transform.smoothscale(BLACK_BISHOP_IMAGE.copy(), (SMALL_IS, SMALL_IS))
 
 BLACK_KNIGHT_IMAGE = pygame.image.load(os.path.join("Assets", "BLACK_KNIGHT.png"))
 BLACK_KNIGHT_IMAGE = pygame.transform.smoothscale(BLACK_KNIGHT_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT)).convert_alpha()
+BLACK_KNIGHT_ALPHA = BLACK_KNIGHT_IMAGE.copy()
+BLACK_KNIGHT_ALPHA = BLACK_KNIGHT_ALPHA.convert_alpha()
+BLACK_KNIGHT_ALPHA.set_alpha(ALPHA)
+BLACK_KNIGHT_SMALL = pygame.transform.smoothscale(BLACK_KNIGHT_IMAGE.copy(), (SMALL_IS, SMALL_IS))
 
 BLACK_ROOK_IMAGE = pygame.image.load(os.path.join("Assets", "BLACK_ROOK.png"))
 BLACK_ROOK_IMAGE = pygame.transform.smoothscale(BLACK_ROOK_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT)).convert_alpha()
+BLACK_ROOK_ALPHA = BLACK_ROOK_IMAGE.copy()
+BLACK_ROOK_ALPHA = BLACK_ROOK_ALPHA.convert_alpha()
+BLACK_ROOK_ALPHA.set_alpha(ALPHA)
+BLACK_ROOK_SMALL = pygame.transform.smoothscale(BLACK_ROOK_IMAGE.copy(), (SMALL_IS, SMALL_IS))
 
 BLACK_KING_IMAGE = pygame.image.load(os.path.join("Assets", "BLACK_KING.png"))
 BLACK_KING_IMAGE = pygame.transform.smoothscale(BLACK_KING_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT)).convert_alpha()
+BLACK_KING_ALPHA = BLACK_KING_IMAGE.copy()
+BLACK_KING_ALPHA = BLACK_KING_ALPHA.convert_alpha()
+BLACK_KING_ALPHA.set_alpha(ALPHA)
+BLACK_KING_SMALL = pygame.transform.smoothscale(BLACK_KING_IMAGE.copy(), (SMALL_IS, SMALL_IS))
 
 BLACK_QUEEN_IMAGE = pygame.image.load(os.path.join("Assets", "BLACK_QUEEN.png"))
 BLACK_QUEEN_IMAGE = pygame.transform.smoothscale(BLACK_QUEEN_IMAGE, (PIECE_WIDTH, PIECE_HEIGHT)).convert_alpha()
+BLACK_QUEEN_ALPHA = BLACK_QUEEN_IMAGE.copy()
+BLACK_QUEEN_ALPHA = BLACK_QUEEN_ALPHA.convert_alpha()
+BLACK_QUEEN_ALPHA.set_alpha(ALPHA)
+BLACK_QUEEN_SMALL = pygame.transform.smoothscale(BLACK_QUEEN_IMAGE.copy(), (SMALL_IS, SMALL_IS))
 
 #Sound effects
 
@@ -90,6 +143,9 @@ DRAW_SOUND = pygame.mixer.Sound('Assets/Sound/GENERIC_NOTIFY.wav')
 #Classes
 class Chess_Board():
     def __init__(self):
+        self.botless_turn = "white"
+        self.prev_time = None
+        self.captured_pieces = []
         self.test_count = 0
         self.check_square_time = 0
         self.get_check_time = 0
@@ -124,6 +180,15 @@ class Chess_Board():
 
         self.selected_piece = None
         self.victory = False
+        offset = 80
+        #clock1 = pygame.Rect(offset, HEIGHT//2 - 60, 240, 120)
+        #clock2 = pygame.Rect(WIDTH - offset - 240, HEIGHT//2 - 60, 240, 120)
+        #clock1 = pygame.Rect(offset, HEIGHT//2 - 240, 240, 120)
+        #clock2 = pygame.Rect(offset, HEIGHT//2 + 120, 240, 120)
+        clock1 = pygame.Rect(WIDTH - offset - 240, HEIGHT//2 + 60, 240, 120)
+        clock2 = pygame.Rect(WIDTH - offset - 240, HEIGHT//2 - 180, 240, 120)
+        self.clock1 = ["white", 30 * 60, clock1]
+        self.clock2 = ["black", 30 * 60, clock2]
     def set_squares(self):
         squares = {}
         for num in ["1", "2", "3", "4", "5", "6", "7", "8"]:
@@ -165,7 +230,9 @@ class Chess_Board():
         square_pieces["E1"] = King("E1", "white")
         square_pieces["E8"] = King("E8", "black")
         return square_pieces
-    def change_turn(self, bot = False):
+    def change_turn(self, bot = False, sound = MOVE_SOUND):
+        if not bot:
+            self.botless_turn = self.turn
         temp_turn = self.turn
         self.turn = self.alt_turn
         self.alt_turn = temp_turn
@@ -180,9 +247,9 @@ class Chess_Board():
         #get_check = self.get_check(self.alt_turn)
         #valid_moves = self.valid_moves(self.turn)
         if bot and self.no_valid_moves():
-                self.score += 1000 * self.score_direction[self.alt_turn]
+            self.score += 1000 * self.score_direction[self.alt_turn]
         if not bot:
-            sound = self.check_state()
+            sound = self.check_state(sound)
             if sound != None:
                 sound.play()
                 if not bot:
@@ -194,43 +261,37 @@ class Chess_Board():
             if self.victory != False:
                 self.can_move = False
             if AI_MODE:
-                total_start_ticks = time.time()
-                #self.test_count = 0
-                #self.check_state_time = 0
-                #self.store_time = 0
-                #self.get_turn_time = 0
-                #self.gbo_time = 0
-                #self.test_move_time = 0
-                #self.get_threats_time = 0
-                #self.check_square_time = 0
-                if self.turn == "black":
-                    pygame.event.pump()
+                if FULL_AI_MODE or self.turn == AI_COLOUR:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            sys.exit()
+                        elif event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_ESCAPE:
+                                pygame.quit()
+                                sys.exit()
                     draw_window()
                     self.og_score = self.score
-                    #self.ai_try_moves()
-                    move, val = self.ai_test_move()
-                    #self.get_turn()
+                    self.botless_turn = self.turn
+                    #move, val = self.ai_test_move()
+                    move, val = self.my_alpha_beta(1000)
                     if move != None:
                         p, m = move
                         self.move_piece(self.square_pieces[p], m)
-                    #print(move)
-                    #print()
-                    #print("function calls:", self.test_count)
-                    #print("check state time:", self.check_state_time)
-                    #print("store time:", self.store_time)
-                    #print("get turn time:", self.get_turn_time)
-                    #print("gbo time:", self.gbo_time)
-                    #print("test move time:", self.test_move_time)
-                    #print("get threats time:", self.get_threats_time)
-                    #print("check square time:", self.check_square_time)
-                    #print("total time:", time.time() - total_start_ticks)
+                    print("function calls:", self.test_count)
+                    print("store time:", self.store_time)
+                    print("get turn time:", self.get_turn_time)
+                    print("gbo time:", self.gbo_time)
+                    print("test move time:", self.test_move_time)
+                    print("get threats time:", self.get_threats_time)
+                    print("check square time:", self.check_square_time)
     def flip(self):
         """flips the board arround so that the squares match up to the flipped positions"""
-        #BOARD.image = pygame.transform.flip(BOARD.image, True, False)
         squares = self.square_positions
         pieces = self.pieces
         y_values = []
         x_values = []
+
         for sq in squares.values():
             y_values.insert(0, sq.y)
             x_values.insert(0, sq.x)
@@ -239,33 +300,18 @@ class Chess_Board():
             sq.y = y_values[count]
             sq.x = x_values[count]
             count += 1
-        
         #for piece in pieces:
         #    pos = self.square_positions[piece.square]
         #    piece.rect.x, piece.rect.y = pos.x + PIECE_ADJUST, pos.y + PIECE_ADJUST
-        
+        self.clock1[2].y, self.clock2[2].y = self.clock2[2].y, self.clock1[2].y
         self.pieces = pieces
     def store_ply(self):
         ply_pieces = []
         start_time = time.time()
         for piece in self.pieces:
-            if True:
-                pass
-            elif piece.name == "pawn":
-                ply_pieces.append(Pawn(piece.square, piece.colour))
-            elif piece.name == "knight":
-                ply_pieces.append(Knight(piece.square, piece.colour))
-            elif piece.name == "bishop":
-                ply_pieces.append(Bishop(piece.square, piece.colour))
-            elif piece.name == "rook":
-                ply_pieces.append(Rook(piece.square, piece.colour))
-            elif piece.name == "queen":
-                ply_pieces.append(Queen(piece.square, piece.colour))
-            elif piece.name == "king":
-                ply_pieces.append(King(piece.square, piece.colour))
             ply_pieces.append(type(piece)(piece.square, piece.colour))
             ply_pieces[-1].has_moved = piece.has_moved
-            #print(type(piece))
+        self.store_time += time.time() - start_time
         square_pieces = {}
         for sq in self.square_positions:
             square_pieces[sq] = None
@@ -278,8 +324,10 @@ class Chess_Board():
             if p != None:
                 placement[s] = p.name
         
-        self.ply_info[self.turn_num] = (ply_pieces, self.turn, square_pieces.copy(), self.score, self.move, placement, self.promoting_piece, self.can_move, self.pawn_or_cap_count)
-        self.store_time += time.time() - start_time
+        self.ply_info[self.turn_num] = (
+            ply_pieces, self.turn, square_pieces.copy(), self.score, self.move,
+            placement, self.promoting_piece, self.can_move, self.pawn_or_cap_count,
+            self.captured_pieces)
     def get_turn(self, turn_num = None):
         start_time = time.time()
         if turn_num == None:
@@ -287,7 +335,7 @@ class Chess_Board():
         else:
             self.turn_num = turn_num
         self.pro_rects = []
-        self.pieces, self.turn, self.square_pieces, self.score, self.move, placement, self.promoting_piece, self.can_move, self.pawn_or_cap_count = self.ply_info[self.turn_num]
+        self.pieces, self.turn, self.square_pieces, self.score, self.move, placement, self.promoting_piece, self.can_move, self.pawn_or_cap_count, self.captured_pieces = self.ply_info[self.turn_num]
         if self.turn == "white":
             self.alt_turn = "black"
         else:
@@ -298,11 +346,10 @@ class Chess_Board():
         #    square_positions = self.square_positions
         #    piece.rect.x, piece.rect.y = square_positions[piece.square].x + PIECE_ADJUST, square_positions[piece.square].y + PIECE_ADJUST
         self.get_turn_time += time.time() - start_time
-    def check_state(self):
+    def check_state(self, sound = MOVE_SOUND):
         start_time = time.time()
         get_check = self.get_check()
         valid_moves = self.no_valid_moves()
-        sound = MOVE_SOUND
         if not get_check and valid_moves:
             sound = DRAW_SOUND
             self.victory = None
@@ -334,6 +381,8 @@ class Chess_Board():
             else:
                 self.score += to_piece.value
             sound = CAPTURE_SOUND
+            if not bot:
+                self.captured_pieces.append((to_piece.small_image, to_piece.colour))
             self.pawn_or_cap_count = 0
         self.move = (piece.square, spos)
         piece_square = piece.square
@@ -370,7 +419,7 @@ class Chess_Board():
             self.promoting_piece = piece
         piece.has_moved = True
         if self.promoting_piece == None:
-            self.change_turn(bot)
+            self.change_turn(bot, sound)
     def test_move(self, piece, spos, turn):
         attackers = 0
         start_time = time.time()
@@ -394,22 +443,18 @@ class Chess_Board():
         self.test_move_time += time.time() - start_time
         return attackers
     def get_board_options(self, pieces = None):
+        self.test_count += 1
         start_time = time.time()
         if pieces == None:
             pieces = self.pieces
         board_options = {}
-        white_attackers = 0
-        black_attackers = 0
-        val = 0
-        for pot_king in pieces:
-            if pot_king.name == "king":
-                if pot_king.colour == self.turn:
-                    c_attackers = pot_king.get_threats()
-                    break
+        #for pot_king in pieces:
+        #    if pot_king.name == "king" and pot_king.colour == self.turn:
+        #        attkers = pot_king.get_threats()
+        #        break
         for piece in pieces:
             if piece.colour != self.turn:
                 continue
-            attkers = c_attackers
             #if piece.name != "king" and attkers >= 2:
             #    print("shortened")
             #    continue
@@ -418,7 +463,7 @@ class Chess_Board():
             for move in piece.movement():
                 attackers = self.test_move(piece, move, piece.colour)
                 if attackers == 0:
-                    board_options[sq] += [move]
+                    board_options[sq].append(move)
         self.board_options = board_options
         self.gbo_time += time.time() - start_time
     def get_check(self):
@@ -441,7 +486,7 @@ class Chess_Board():
     def is_repeating(self):
         placementS = []
         for t in self.ply_info:
-            pieces, turn, square_pieces, score, move, placement, promoting_piece, can_move, pawn_or_cap_count = self.ply_info[t]
+            pieces, turn, square_pieces, score, move, placement, promoting_piece, can_move, pawn_or_cap_count, captured_pieces = self.ply_info[t]
             placementS += [placement]
         
         for p in placementS:
@@ -504,21 +549,58 @@ class Chess_Board():
         self.promoting_piece = None
         self.pro_rects == []
         self.change_turn()
-    def minimax(self, depth = 2):
-        board_options = self.board_options.copy()
-        for p in board_options:
-            for m in board_options[p]:
-                self.move_piece(self.square_pieces[p], m, True)
-    def ai_test_move(self, depth = 2, minimum = None):
-        #minimum = False
-        self.test_count += 1
-        new_minimum = minimum
+    def update_clocks(self, bot = False):
+        WIN.fill((255, 255, 255), self.clock1[2])
+        WIN.fill((255, 255, 255), self.clock2[2])
+
+        #if not bot:
+        if self.turn_num > 0:
+            if self.botless_turn == "white":
+                self.clock1[1] -= 1/FPS
+            else:
+                self.clock2[1] -= 1/FPS
+        #else:
+        #    self.clock2[1] -= 1/FPS
+        
+        for clock in [self.clock1, self.clock2]:
+            pygame.draw.rect(WIN, (0, 0, 0), clock[2], 1)
+            hours, minutes, seconds = seconds_to_time(round(clock[1]))
+            txt = f"{hours:02}:{minutes:02}:{seconds:02}"
+            txt_width, txt_height = fonts["arial"].size(txt)
+            label = fonts["arial"].render((txt), 1, (0, 0, 0))
+            WIN.blit(label, (clock[2].x + clock[2].w / 2 - txt_width / 2, clock[2].y + clock[2].h / 2 - txt_height / 2  ))
+        if not bot:
+            w_x = self.clock1[2].x
+            b_x = w_x
+            w_y = self.clock2[2].y - 60
+            b_y = self.clock1[2].y - 60
+            for piece in self.captured_pieces:
+                image, colour = piece
+                x, y = w_x, w_y
+                if colour == "black":
+                    x, y = b_x, b_y
+                WIN.blit(image, (x, y))
+                if colour == "white":
+                    w_x += 40
+                else:
+                    b_x += 40
+    def ai_test_move(self, depth = 2):
+        my_time = round(time.time() * FPS)
+        if my_time != self.prev_time and my_time % 1 == 0:
+            self.prev_time = my_time
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+            self.update_clocks(True)
+            pygame.display.update()
         turn = self.turn
-        #turn_num = max(self.ply_info)
         if depth == 0:
             return None, self.score
-        #pieces = list(self.board_options[turn].keys())
-        moves = []
         best_l = {}
         board_options = self.board_options.copy()
         for p in board_options:
@@ -527,16 +609,13 @@ class Chess_Board():
                     self.move_piece(self.square_pieces[p], m, True)
                     score = self.score
                     if self.victory == None:
-                        self.get_turn()
+                        score = 0
                     else:
                         move, score = self.ai_test_move(depth - 1)
-                    
-                    #score = self.score
                     self.get_turn()
                     if score not in best_l:
                         best_l[score] = []
                     best_l[score].append((p, m))
-
         if len(best_l) > 0:
             temp_func = max
             if turn == "black":
@@ -546,6 +625,65 @@ class Chess_Board():
             return (piece, move), score
         return None, self.score
         #self.move_piece(self.square_pieces[piece], move)
+    def my_alpha_beta(self, best_scoree, depth = 2):
+        my_time = round(time.time() * FPS)
+        if my_time != self.prev_time and my_time % 1 == 0:
+            self.prev_time = my_time
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+            self.update_clocks(True)
+            pygame.display.update()
+        turn = self.turn
+        if depth == 0:
+            return None, self.score
+        best_l = {}
+        board_options = self.board_options.copy()
+        for p in board_options:
+            for m in board_options[p]:
+                if p in self.square_pieces:
+                    abandon = False
+                    self.move_piece(self.square_pieces[p], m, True)
+                    if self.turn == "white":
+                        if self.score > best_scoree:
+                            self.get_turn()
+                            abandon = True
+                    score = self.score
+                    if self.victory == None:
+                        score = 0
+                    elif not abandon:
+                        move, score = self.my_alpha_beta(best_scoree, depth - 1)
+                    else:
+                        continue
+                    self.get_turn()
+                    if score not in best_l:
+                        best_l[score] = []
+                    best_l[score].append((p, m))
+                    if self.turn == "black":
+                        best_scoree = min(best_scoree, score)
+                    
+        if len(best_l) > 0:
+            temp_func = max
+            if turn == "black":
+                temp_func = min
+            score = temp_func(list(best_l.keys()))
+            piece, move = random.choice(best_l[score])
+            return (piece, move), score
+        return None, self.score
+        #self.move_piece(self.square_pieces[piece], move)
+def seconds_to_time(seconds):
+    minutes = seconds // 60
+    seconds = seconds - minutes * 60
+
+    hours = minutes // 60
+    minutes = minutes - hours * 60
+
+    return (hours, minutes, seconds)
 def get_square_pos(square):
         """Sets the piece's position to the center of square - INCOMPLETE"""
         let = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
@@ -564,7 +702,6 @@ class Pieces():
         self.colour = colour
         self.has_moved = False
         self.en_passant = False
-
         self.get_image()
         self.rect = pygame.Rect((get_square_pos(square), (PIECE_WIDTH, PIECE_HEIGHT)))
         self.pos = 0, 0
@@ -605,10 +742,12 @@ class Pawn(Pieces):
         self.value = 1
         if self.colour == "white":
             self.image = WHITE_PAWN_IMAGE
+            self.alpha_image = WHITE_PAWN_ALPHA
+            self.small_image = WHITE_PAWN_SMALL
         else:
             self.image = BLACK_PAWN_IMAGE
-        self.alpha_image = self.image.copy()
-        self.alpha_image.set_alpha(ALPHA)
+            self.alpha_image = BLACK_PAWN_ALPHA
+            self.small_image = BLACK_PAWN_SMALL
     def movement(self):
         options = []
 
@@ -647,10 +786,12 @@ class Knight(Pieces):
         self.name = "knight"
         if self.colour == "white":
             self.image = WHITE_KNIGHT_IMAGE
+            self.alpha_image = WHITE_KNIGHT_ALPHA
+            self.small_image = WHITE_KNIGHT_SMALL
         else:
             self.image = BLACK_KNIGHT_IMAGE
-        self.alpha_image = self.image.copy()
-        self.alpha_image.set_alpha(ALPHA)
+            self.alpha_image = BLACK_KNIGHT_ALPHA
+            self.small_image = BLACK_KNIGHT_SMALL
     def movement(self):
         options = []
 
@@ -671,10 +812,12 @@ class Bishop(Pieces):
         self.name = "bishop"
         if self.colour == "white":
             self.image = WHITE_BISHOP_IMAGE
+            self.alpha_image = WHITE_BISHOP_ALPHA
+            self.small_image = WHITE_BISHOP_SMALL
         else:
             self.image = BLACK_BISHOP_IMAGE
-        self.alpha_image = self.image.copy()
-        self.alpha_image.set_alpha(ALPHA)
+            self.alpha_image = BLACK_BISHOP_ALPHA
+            self.small_image = BLACK_BISHOP_SMALL
     def movement(self):
         options = []
 
@@ -697,10 +840,12 @@ class Rook(Pieces):
         self.name = "rook"
         if self.colour == "white":
             self.image = WHITE_ROOK_IMAGE
+            self.alpha_image = WHITE_ROOK_ALPHA
+            self.small_image = WHITE_ROOK_SMALL
         else:
             self.image = BLACK_ROOK_IMAGE
-        self.alpha_image = self.image.copy()
-        self.alpha_image.set_alpha(ALPHA)
+            self.alpha_image = BLACK_ROOK_ALPHA
+            self.small_image = BLACK_ROOK_SMALL
     def movement(self):
         options = []
         for x in [(1, 0), (0, 1), (-1, 0), (0, -1)]:
@@ -721,10 +866,12 @@ class Queen(Pieces):
         self.name = "queen"
         if self.colour == "white":
             self.image = WHITE_QUEEN_IMAGE
+            self.alpha_image = WHITE_QUEEN_ALPHA
+            self.small_image = WHITE_QUEEN_SMALL
         else:
             self.image = BLACK_QUEEN_IMAGE
-        self.alpha_image = self.image.copy()
-        self.alpha_image.set_alpha(ALPHA)
+            self.alpha_image = BLACK_QUEEN_ALPHA
+            self.small_image = BLACK_QUEEN_SMALL
     def movement(self):
         options = []
         for a in [0, 1, -1]:
@@ -746,10 +893,12 @@ class King(Pieces):
         self.name = "king"
         if self.colour == "white":
             self.image = WHITE_KING_IMAGE
+            self.alpha_image = WHITE_KING_ALPHA
+            self.small_image = WHITE_KING_SMALL
         else:
             self.image = BLACK_KING_IMAGE
-        self.alpha_image = self.image.copy()
-        self.alpha_image.set_alpha(ALPHA)
+            self.alpha_image = BLACK_KING_ALPHA
+            self.small_image = BLACK_KING_SMALL
     def movement(self):
         options = []
         for a in [0, 1, -1]:
@@ -767,79 +916,63 @@ class King(Pieces):
         
         return options
     def get_threats(self):
-        #pawn
         attackers = 0
         start_time = time.time()
         i = 1
         if self.colour == "black":
             i = -1
-        
-        for x in (1,-1): #check right and left
-            square = self.check_square((x,i), take = True) #diagonally forward and must take
-            if square != None:
-                piece = BOARD.square_pieces[square]
-                if piece != None:
-                    if piece.name == "pawn" and piece.colour != self.colour:
+        operations = []
+        #pawns
+        coords = [(1, 1*i), (-1, 1*i)]
+        operations.append([Pawn, coords, True])
+        #knights
+        coords = [(1, 2), (2, 1), (1, -2), (-2, 1), (-1, 2), (2, -1), (-1, -2), (-2, -1)]
+        operations.append([Knight, coords, None])
+        #bishops
+        lcoords = [[(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)],
+                  [(1, -1), (2, -2), (3, -3), (4, -4), (5, -5), (6, -6), (7, -7)],
+                  [(-1, 1), (-2, 2), (-3, 3), (-4, 4), (-5, 5), (-6, 6), (-7, 7)],
+                  [(-1, -1), (-2, -2), (-3, -3), (-4, -4), (-5, -5), (-6, -6), (-7, -7)]]
+        for coords in lcoords:
+            operations.append([Bishop, coords, None])
+        #rooks
+        lcoords = [[(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0)],
+                  [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7)],
+                  [(-1, 0), (-2, 0), (-3, 0), (-4, 0), (-5, 0), (-6, 0), (-7, 0)],
+                  [(0, -1), (0, -2), (0, -3), (0, -4), (0, -5), (0, -6), (0, -7)]]
+        for coords in lcoords:
+            operations.append([Rook, coords, None])
+        let = ["A", "B", "C", "D", "E", "F", "G", "H"]
+        a, b = self.square[0], int(self.square[1])
+        a = let.index(a) + 1
+        for op in operations:
+            for coords in op[1]:
+                na, nb = coords
+                if not a + na <= 8 or not a + na >= 1:
+                    break
+                if not b + nb <= 8 or not b + nb >= 1:
+                    break
+                new_let = let[a + na - 1]
+                new_num = str(b + nb)
+                new_pos = new_let + new_num
+                if type(BOARD.square_pieces[new_pos]) == op[0]:
+                    if BOARD.square_pieces[new_pos].colour != self.colour:
                         attackers += 1
-        options = []
-        for a in (1,-1):
-            for b in (2,-2):
-                square = self.check_square((a, b))
-                if square != None:
-                    options.append(square)
-                square = self.check_square((b, a))
-                if square != None:
-                    options.append(square)
-        for sq in options:
-            piece = BOARD.square_pieces[sq]
-            if piece != None:
-                if piece.name == "knight" and piece.colour != self.colour:
-                    attackers += 1
-        #bishop moves
-        options = []
-        for a in (1,-1):
-            for b in (1,-1):
-                for i in range(1,8):
-                    square = self.check_square((a*i, b*i))
-                    if square == None:
+                #elif BOARD.square_pieces[new_pos] != None:
+                #    if BOARD.square_pieces[new_pos].colour != self.colour:
+                #        print(type(BOARD.square_pieces[new_pos]))
+                if op[0] == Rook or op[0] == Bishop:
+                    if type(BOARD.square_pieces[new_pos]) == Queen:
+                        if BOARD.square_pieces[new_pos].colour != self.colour:
+                            attackers += 1
+                    if BOARD.square_pieces[new_pos] != None:
                         break
-                    options.append(square)
-                    if BOARD.square_pieces[square] != None:
-                        break
-                    #square = self.check_square((a*i, b*i), take = False)
-                    #if square == None:
-                    #    break
-        for sq in options:
-            piece = BOARD.square_pieces[sq]
-            if piece != None:
-                if (piece.name == "bishop" and piece.colour != self.colour) or (piece.name == "queen" and piece.colour != self.colour):
-                    attackers += 1
-        #queen moves
-        options = []
-        for x in ((1, 0), (0, 1), (-1, 0), (0, -1)):
-            a, b = x
-            for i in range(1,8):
-                square = self.check_square((i*a, i*b))
-                if square == None:
-                    break
-                options.append(square)
-                if BOARD.square_pieces[square] != None:
-                    break
-                #square = self.check_square((i*a, i*b), take = False)
-                #if square == None:
-                #    break
-        
-        for sq in options:
-            piece = BOARD.square_pieces[sq]
-            if piece != None:
-                if (piece.name == "rook" and piece.colour != self.colour) or (piece.name == "queen" and piece.colour != self.colour):
-                    attackers += 1
-        
         BOARD.get_threats_time += time.time() - start_time
         return attackers
 
-#endregion
             
+
+#endregion            
 
 BOARD = Chess_Board()
 def valid_castle(s, rook_square):                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
@@ -869,7 +1002,7 @@ def valid_castle(s, rook_square):
                 return False
     return squares[-1] + s[1]
     
-            
+             
 def draw_window():
     if BOARD.selected_piece == None:
         for piece in BOARD.pieces:
@@ -877,6 +1010,7 @@ def draw_window():
             piece.rect.x, piece.rect.y = square_positions[piece.square].x + PIECE_ADJUST, square_positions[piece.square].y + PIECE_ADJUST
     WIN.fill((255,255,255))
     WIN.fill((40, 50, 60))
+    BOARD.update_clocks()
     pygame.draw.rect(WIN, (220, 220, 220),BOARD_rect) #board background
     WIN.blit(BOARD.image, (BOARD_rect.x, BOARD_rect.y)) #blit board
     if BOARD.move != ("",""):
@@ -937,6 +1071,8 @@ def main():
     pressed = False
     BOARD.get_board_options()
     START_SOUND.play()
+    #time = [hour, min, sec]
+    #clock1 = (colour, time)
     #BOARD.store_ply()
     while run:
         count += 1
@@ -955,6 +1091,11 @@ def main():
                     print(len(BOARD.ply_info))
                 elif event.key == pygame.K_f:
                     BOARD.flip()
+                elif event.key == pygame.K_s:
+                    move, val = BOARD.my_alpha_beta(1000)
+                    if move != None:
+                        p, m = move
+                        BOARD.move_piece(BOARD.square_pieces[p], m)
                 elif event.key == pygame.K_LEFT and BOARD.turn_num > 0 and BOARD.can_move and BOARD.selected_piece == None:
                     BOARD.get_turn()
                     BOARD.get_board_options()
