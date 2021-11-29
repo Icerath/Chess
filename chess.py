@@ -4,12 +4,6 @@ import random
 import time
 import sys
 #import datetime
-c_path = os.getcwd()
-if c_path[-5:] == "Saves":
-    path = path = os.path.join("\\Users","User","Documents","Python Saves","Fun Projects","Tier_1","current","pygame","chess")
-    os.chdir(path)
-else:
-    print(c_path[-6:-1])
 pygame.init()
 
 display_info = pygame.display.Info()
@@ -131,14 +125,13 @@ BLACK_QUEEN_SMALL = pygame.transform.smoothscale(BLACK_QUEEN_IMAGE.copy(), (SMAL
 
 #Sound effects
 
-START_SOUND = pygame.mixer.Sound('Assets/Sound/START.wav')
-MOVE_SOUND = pygame.mixer.Sound('Assets/Sound/MOVE.wav')
-CAPTURE_SOUND = pygame.mixer.Sound('Assets/Sound/CAPTURE.wav')
-#CASTLE_SOUND = pygame.mixer.Sound('Assets/Sound/CAPTURE.wav')
+START_SOUND = pygame.mixer.Sound(os.path.join('Assets', 'Sound', 'START.wav'))
+MOVE_SOUND = pygame.mixer.Sound(os.path.join('Assets','Sound','MOVE.wav'))
+CAPTURE_SOUND = pygame.mixer.Sound(os.path.join('Assets', 'Sound', 'CAPTURE.wav'))
 CASTLE_SOUND = MOVE_SOUND
-CHECK_SOUND = pygame.mixer.Sound('Assets/Sound/SILENCE.wav')
-CHECKMATE_SOUND = pygame.mixer.Sound('Assets/Sound/GENERIC_NOTIFY.wav ')
-DRAW_SOUND = pygame.mixer.Sound('Assets/Sound/GENERIC_NOTIFY.wav')
+CHECK_SOUND = pygame.mixer.Sound(os.path.join('Assets','Sound','SILENCE.wav'))
+CHECKMATE_SOUND = pygame.mixer.Sound(os.path.join('Assets','Sound','GENERIC_NOTIFY.wav'))
+DRAW_SOUND = pygame.mixer.Sound(os.path.join('Assets','Sound','GENERIC_NOTIFY.wav'))
 #endregion
 #Classes
 class Chess_Board():
@@ -181,10 +174,6 @@ class Chess_Board():
         self.selected_piece = None
         self.victory = False
         offset = 80
-        #clock1 = pygame.Rect(offset, HEIGHT//2 - 60, 240, 120)
-        #clock2 = pygame.Rect(WIDTH - offset - 240, HEIGHT//2 - 60, 240, 120)
-        #clock1 = pygame.Rect(offset, HEIGHT//2 - 240, 240, 120)
-        #clock2 = pygame.Rect(offset, HEIGHT//2 + 120, 240, 120)
         clock1 = pygame.Rect(WIDTH - offset - 240, HEIGHT//2 + 60, 240, 120)
         clock2 = pygame.Rect(WIDTH - offset - 240, HEIGHT//2 - 180, 240, 120)
         self.clock1 = ["white", 30 * 60, clock1]
@@ -272,7 +261,7 @@ class Chess_Board():
                                 sys.exit()
                     draw_window()
                     self.og_score = self.score
-                    self.botless_turn = self.turn
+                    #self.botless_turn = self.turn
                     #move, val = self.ai_test_move()
                     move, val = self.my_alpha_beta(1000)
                     if move != None:
@@ -555,7 +544,7 @@ class Chess_Board():
 
         #if not bot:
         if self.turn_num > 0:
-            if self.botless_turn == "white":
+            if self.botless_turn == "black":
                 self.clock1[1] -= 1/FPS
             else:
                 self.clock2[1] -= 1/FPS
@@ -625,7 +614,7 @@ class Chess_Board():
             return (piece, move), score
         return None, self.score
         #self.move_piece(self.square_pieces[piece], move)
-    def my_alpha_beta(self, best_scoree, depth = 2):
+    def my_alpha_beta(self, best_scoree, depth = 3):
         my_time = round(time.time() * FPS)
         if my_time != self.prev_time and my_time % 1 == 0:
             self.prev_time = my_time
@@ -1092,6 +1081,7 @@ def main():
                 elif event.key == pygame.K_f:
                     BOARD.flip()
                 elif event.key == pygame.K_s:
+                    BOARD.botless_turn = BOARD.turn
                     move, val = BOARD.my_alpha_beta(1000)
                     if move != None:
                         p, m = move
