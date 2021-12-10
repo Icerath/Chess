@@ -3,6 +3,13 @@ import os
 import random
 import time
 import sys
+#
+c_path = os.getcwd()
+if c_path[-5:] == "Saves":
+    path = path = os.path.join("\\Users","User","Documents","Python Saves","Fun Projects","Tier_1","current","pygame","chess")
+    os.chdir(path)
+else:
+    print(c_path[-6:-1])
 #import datetime
 pygame.init()
 
@@ -12,7 +19,7 @@ WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 #WIN = pygame.display.set_mode((1920, 1080))
 FPS = 45
 AI_MODE = True
-FULL_AI_MODE = True
+FULL_AI_MODE = False
 AI_COLOUR = "black"
 ALPHA = 64
 pygame.display.set_caption("Chess")
@@ -230,13 +237,22 @@ class Chess_Board():
         self.turn_num += 1
         self.pawn_or_cap_count += 1
         self.store_ply() # store new turn
-        #print(len(self.ply_info))
-        #self.is_repeating()
-        #set every piece to the correct x and y
-        #get_check = self.get_check(self.alt_turn)
-        #valid_moves = self.valid_moves(self.turn)
+
+        score = 0
+        let = ["A", "B", "C", "D", "E", "F", "G", "H"]
+        for p in self.pieces:
+            x, y = p.square[0], p.square[1]
+            x = let.index(x)
+            y = int(y) - 1
+            if p.colour == "white":
+                score += p.value
+                score += p.score_map[7-y][7-x]
+            else:
+                score -= p.value
+                score -= p.score_map[y][x]
+        self.score = score
         if bot and self.no_valid_moves():
-            self.score += 1000 * self.score_direction[self.alt_turn]
+            self.score += 20000 * self.score_direction[self.alt_turn]
         if not bot:
             sound = self.check_state(sound)
             if sound != None:
@@ -263,6 +279,7 @@ class Chess_Board():
                     self.og_score = self.score
                     #self.botless_turn = self.turn
                     #move, val = self.ai_test_move()
+                    start_time = time.time()
                     move, val = self.my_alpha_beta(1000)
                     if move != None:
                         p, m = move
@@ -274,6 +291,7 @@ class Chess_Board():
                     print("test move time:", self.test_move_time)
                     print("get threats time:", self.get_threats_time)
                     print("check square time:", self.check_square_time)
+                    print("total time:", time.time() - start_time)
     def flip(self):
         """flips the board arround so that the squares match up to the flipped positions"""
         squares = self.square_positions
@@ -314,7 +332,7 @@ class Chess_Board():
                 placement[s] = p.name
         
         self.ply_info[self.turn_num] = (
-            ply_pieces, self.turn, square_pieces.copy(), self.score, self.move,
+            ply_pieces, self.turn, square_pieces.copy(), self.move,
             placement, self.promoting_piece, self.can_move, self.pawn_or_cap_count,
             self.captured_pieces)
     def get_turn(self, turn_num = None):
@@ -324,7 +342,7 @@ class Chess_Board():
         else:
             self.turn_num = turn_num
         self.pro_rects = []
-        self.pieces, self.turn, self.square_pieces, self.score, self.move, placement, self.promoting_piece, self.can_move, self.pawn_or_cap_count, self.captured_pieces = self.ply_info[self.turn_num]
+        self.pieces, self.turn, self.square_pieces, self.move, placement, self.promoting_piece, self.can_move, self.pawn_or_cap_count, self.captured_pieces = self.ply_info[self.turn_num]
         if self.turn == "white":
             self.alt_turn = "black"
         else:
@@ -365,10 +383,7 @@ class Chess_Board():
         if piece.name == "pawn": #reset pocc
             self.pawn_or_cap_count = 0
         if to_piece != None:
-            if to_piece.colour == "white": 
-                self.score -= to_piece.value
-            else:
-                self.score += to_piece.value
+    
             sound = CAPTURE_SOUND
             if not bot:
                 self.captured_pieces.append((to_piece.small_image, to_piece.colour))
@@ -409,7 +424,7 @@ class Chess_Board():
         piece.has_moved = True
         if self.promoting_piece == None:
             self.change_turn(bot, sound)
-    def test_move(self, piece, spos, turn):
+    def test_move(self, piece, spos):
         attackers = 0
         start_time = time.time()
         piece_square = piece.square
@@ -437,20 +452,13 @@ class Chess_Board():
         if pieces == None:
             pieces = self.pieces
         board_options = {}
-        #for pot_king in pieces:
-        #    if pot_king.name == "king" and pot_king.colour == self.turn:
-        #        attkers = pot_king.get_threats()
-        #        break
         for piece in pieces:
             if piece.colour != self.turn:
                 continue
-            #if piece.name != "king" and attkers >= 2:
-            #    print("shortened")
-            #    continue
             sq = piece.square
             board_options[sq] = []
             for move in piece.movement():
-                attackers = self.test_move(piece, move, piece.colour)
+                attackers = self.test_move(piece, move)
                 if attackers == 0:
                     board_options[sq].append(move)
         self.board_options = board_options
@@ -475,13 +483,13 @@ class Chess_Board():
     def is_repeating(self):
         placementS = []
         for t in self.ply_info:
-            pieces, turn, square_pieces, score, move, placement, promoting_piece, can_move, pawn_or_cap_count, captured_pieces = self.ply_info[t]
+            pieces, turn, square_pieces, move, placement, promoting_piece, can_move, pawn_or_cap_count, captured_pieces = self.ply_info[t]
             placementS += [placement]
         
         for p in placementS:
             if placementS.count(p) >= 3:
                 return True
-    def get_promote(self):
+    def get_promote(self, bot = False):
         self.can_move = False
         piece = self.promoting_piece
         square = piece.square
@@ -512,6 +520,8 @@ class Chess_Board():
         else:
             cl_pro_rects = self.black_pro_rects
         count = 0
+        if bot:
+            self.promote(self.pro_rects[3])
         for rect in self.pro_rects: #DRAW THE PIECES
             WIN.blit(cl_pro_rects[count], (rect.x, rect.y, rect.w, rect.h))
             count += 1
@@ -530,10 +540,6 @@ class Chess_Board():
             self.square_pieces[piece.square] = Bishop(piece.square, piece.colour)
         new_piece = self.square_pieces[piece.square]
         new_piece.has_moved = True
-        if new_piece.colour == "white": 
-            self.score += new_piece.value - 1
-        else:
-            self.score -= new_piece.value - 1
         self.pieces.append(new_piece)
         self.promoting_piece = None
         self.pro_rects == []
@@ -553,7 +559,11 @@ class Chess_Board():
         
         for clock in [self.clock1, self.clock2]:
             pygame.draw.rect(WIN, (0, 0, 0), clock[2], 1)
-            hours, minutes, seconds = seconds_to_time(round(clock[1]))
+            seconds = round(clock[1])
+            minutes = seconds // 60
+            seconds = seconds - minutes * 60
+            hours = minutes // 60
+            minutes = minutes - hours * 60
             txt = f"{hours:02}:{minutes:02}:{seconds:02}"
             txt_width, txt_height = fonts["arial"].size(txt)
             label = fonts["arial"].render((txt), 1, (0, 0, 0))
@@ -568,52 +578,11 @@ class Chess_Board():
                 x, y = w_x, w_y
                 if colour == "black":
                     x, y = b_x, b_y
-                WIN.blit(image, (x, y))
+                WIN.blit(image[colour], (x, y))
                 if colour == "white":
                     w_x += 40
                 else:
                     b_x += 40
-    def ai_test_move(self, depth = 2):
-        my_time = round(time.time() * FPS)
-        if my_time != self.prev_time and my_time % 1 == 0:
-            self.prev_time = my_time
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        pygame.quit()
-                        sys.exit()
-            self.update_clocks(True)
-            pygame.display.update()
-        turn = self.turn
-        if depth == 0:
-            return None, self.score
-        best_l = {}
-        board_options = self.board_options.copy()
-        for p in board_options:
-            for m in board_options[p]:
-                if p in self.square_pieces:
-                    self.move_piece(self.square_pieces[p], m, True)
-                    score = self.score
-                    if self.victory == None:
-                        score = 0
-                    else:
-                        move, score = self.ai_test_move(depth - 1)
-                    self.get_turn()
-                    if score not in best_l:
-                        best_l[score] = []
-                    best_l[score].append((p, m))
-        if len(best_l) > 0:
-            temp_func = max
-            if turn == "black":
-                temp_func = min
-            score = temp_func(list(best_l.keys()))
-            piece, move = random.choice(best_l[score])
-            return (piece, move), score
-        return None, self.score
-        #self.move_piece(self.square_pieces[piece], move)
     def my_alpha_beta(self, best_scoree, depth = 3):
         my_time = round(time.time() * FPS)
         if my_time != self.prev_time and my_time % 1 == 0:
@@ -655,24 +624,18 @@ class Chess_Board():
                     best_l[score].append((p, m))
                     if self.turn == "black":
                         best_scoree = min(best_scoree, score)
-                    
+                    #elif self.turn == "white":
+                    #    best_scoree = max(best_scoree, score)
         if len(best_l) > 0:
             temp_func = max
             if turn == "black":
                 temp_func = min
             score = temp_func(list(best_l.keys()))
+            #piece, move = random.choice(best_l[score])
             piece, move = random.choice(best_l[score])
             return (piece, move), score
         return None, self.score
         #self.move_piece(self.square_pieces[piece], move)
-def seconds_to_time(seconds):
-    minutes = seconds // 60
-    seconds = seconds - minutes * 60
-
-    hours = minutes // 60
-    minutes = minutes - hours * 60
-
-    return (hours, minutes, seconds)
 def get_square_pos(square):
         """Sets the piece's position to the center of square - INCOMPLETE"""
         let = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
@@ -686,14 +649,13 @@ def get_square_pos(square):
 
 #region Pieces
 class Pieces():
+    has_moved = False
+    en_passant = False
+    pos = 0, 0
     def __init__(self, square, colour):
         self.square = square
         self.colour = colour
-        self.has_moved = False
-        self.en_passant = False
-        self.get_image()
         self.rect = pygame.Rect((get_square_pos(square), (PIECE_WIDTH, PIECE_HEIGHT)))
-        self.pos = 0, 0
     def check_square(self, xy, take = None):
         start_time = time.time()
         let = ["A", "B", "C", "D", "E", "F", "G", "H"]
@@ -726,17 +688,19 @@ class Pieces():
         
     
 class Pawn(Pieces):
-    def get_image(self):
-        self.name = "pawn"
-        self.value = 1
-        if self.colour == "white":
-            self.image = WHITE_PAWN_IMAGE
-            self.alpha_image = WHITE_PAWN_ALPHA
-            self.small_image = WHITE_PAWN_SMALL
-        else:
-            self.image = BLACK_PAWN_IMAGE
-            self.alpha_image = BLACK_PAWN_ALPHA
-            self.small_image = BLACK_PAWN_SMALL
+    name = "pawn"
+    image = {"white": WHITE_PAWN_IMAGE, "black": BLACK_PAWN_IMAGE}
+    alpha_image = {"white": WHITE_PAWN_ALPHA, "black": BLACK_PAWN_ALPHA}
+    small_image = {"white": WHITE_PAWN_SMALL, "black": BLACK_PAWN_SMALL}
+    value = 100
+    score_map =  [[0,  0,  0,  0,  0,  0,  0,  0],
+		         [50, 50, 50, 50, 50, 50, 50, 50],
+		         [10, 10, 20, 30, 30, 20, 10, 10],
+ 		         [5,  5, 10, 25, 25, 10,  5,  5],
+ 		         [0,  0,  0, 20, 20,  0,  0,  0],
+ 		         [5, -5,-10,  0,  0,-10, -5,  5],
+ 		         [5, 10, 10,-20,-20, 10, 10,  5],
+ 		         [0,  0,  0,  0,  0,  0,  0,  0]]
     def movement(self):
         options = []
 
@@ -770,17 +734,19 @@ class Pawn(Pieces):
         return options
 
 class Knight(Pieces):
-    def get_image(self):
-        self.value = 3
-        self.name = "knight"
-        if self.colour == "white":
-            self.image = WHITE_KNIGHT_IMAGE
-            self.alpha_image = WHITE_KNIGHT_ALPHA
-            self.small_image = WHITE_KNIGHT_SMALL
-        else:
-            self.image = BLACK_KNIGHT_IMAGE
-            self.alpha_image = BLACK_KNIGHT_ALPHA
-            self.small_image = BLACK_KNIGHT_SMALL
+    name = "knight"
+    image = {"white": WHITE_KNIGHT_IMAGE, "black": BLACK_KNIGHT_IMAGE}
+    alpha_image = {"white": WHITE_KNIGHT_ALPHA, "black": BLACK_KNIGHT_ALPHA}
+    small_image = {"white": WHITE_KNIGHT_SMALL, "black": BLACK_KNIGHT_SMALL}
+    value = 320
+    score_map = [[50,-40,-30,-30,-30,-30,-40,-50],
+                [-40,-20,  0,  0,  0,  0,-20,-40],
+                [-30,  0, 10, 15, 15, 10,  0,-30],
+                [-30,  5, 15, 20, 20, 15,  5,-30],
+                [-30,  0, 15, 20, 20, 15,  0,-30],
+                [-30,  5, 10, 15, 15, 10,  5,-30],
+                [-40,-20,  0,  5,  5,  0,-20,-40],
+                [-50,-40,-30,-30,-30,-30,-40,-50]]
     def movement(self):
         options = []
 
@@ -796,20 +762,21 @@ class Knight(Pieces):
 
 
 class Bishop(Pieces):
-    def get_image(self):
-        self.value = 3
-        self.name = "bishop"
-        if self.colour == "white":
-            self.image = WHITE_BISHOP_IMAGE
-            self.alpha_image = WHITE_BISHOP_ALPHA
-            self.small_image = WHITE_BISHOP_SMALL
-        else:
-            self.image = BLACK_BISHOP_IMAGE
-            self.alpha_image = BLACK_BISHOP_ALPHA
-            self.small_image = BLACK_BISHOP_SMALL
+    name = "bishop"
+    image = {"white": WHITE_BISHOP_IMAGE, "black": BLACK_BISHOP_IMAGE}
+    alpha_image = {"white": WHITE_BISHOP_ALPHA, "black": BLACK_BISHOP_ALPHA}
+    small_image = {"white": WHITE_BISHOP_SMALL, "black": BLACK_BISHOP_SMALL}
+    value = 330
+    score_map = [[-20,-10,-10,-10,-10,-10,-10,-20],
+                [-10,  0,  0,  0,  0,  0,  0,-10],
+                [-10,  0,  5, 10, 10,  5,  0,-10],
+                [-10,  5,  5, 10, 10,  5,  5,-10],
+                [-10,  0, 10, 10, 10, 10,  0,-10],
+                [-10, 10, 10, 10, 10, 10, 10,-10],
+                [-10,  5,  0,  0,  0,  0,  5,-10],
+                [-20,-10,-10,-10,-10,-10,-10,-20]]
     def movement(self):
         options = []
-
         for a in [1,-1]:
             for b in [1,-1]:
                 for i in range(1,8):
@@ -824,17 +791,19 @@ class Bishop(Pieces):
         return options
 
 class Rook(Pieces):
-    def get_image(self):
-        self.value = 5
-        self.name = "rook"
-        if self.colour == "white":
-            self.image = WHITE_ROOK_IMAGE
-            self.alpha_image = WHITE_ROOK_ALPHA
-            self.small_image = WHITE_ROOK_SMALL
-        else:
-            self.image = BLACK_ROOK_IMAGE
-            self.alpha_image = BLACK_ROOK_ALPHA
-            self.small_image = BLACK_ROOK_SMALL
+    name = "rook"
+    image = {"white": WHITE_ROOK_IMAGE, "black": BLACK_ROOK_IMAGE}
+    alpha_image = {"white": WHITE_ROOK_ALPHA, "black": BLACK_ROOK_ALPHA}
+    small_image = {"white": WHITE_ROOK_SMALL, "black": BLACK_ROOK_SMALL}
+    value = 500
+    score_map = [[0,  0,  0,  0,  0,  0,  0,  0],
+                [5, 10, 10, 10, 10, 10, 10,  5],
+                [-5,  0,  0,  0,  0,  0,  0, -5],
+                [-5,  0,  0,  0,  0,  0,  0, -5],
+                [-5,  0,  0,  0,  0,  0,  0, -5],
+                [-5,  0,  0,  0,  0,  0,  0, -5],
+                [-5,  0,  0,  0,  0,  0,  0, -5],
+                [0,  0,  0,  5,  5,  0,  0,  0]]
     def movement(self):
         options = []
         for x in [(1, 0), (0, 1), (-1, 0), (0, -1)]:
@@ -850,17 +819,19 @@ class Rook(Pieces):
         return options
 
 class Queen(Pieces):
-    def get_image(self):
-        self.value = 9
-        self.name = "queen"
-        if self.colour == "white":
-            self.image = WHITE_QUEEN_IMAGE
-            self.alpha_image = WHITE_QUEEN_ALPHA
-            self.small_image = WHITE_QUEEN_SMALL
-        else:
-            self.image = BLACK_QUEEN_IMAGE
-            self.alpha_image = BLACK_QUEEN_ALPHA
-            self.small_image = BLACK_QUEEN_SMALL
+    name = "queen"
+    image = {"white": WHITE_QUEEN_IMAGE, "black": BLACK_QUEEN_IMAGE}
+    alpha_image = {"white": WHITE_QUEEN_ALPHA, "black": BLACK_QUEEN_ALPHA}
+    small_image = {"white": WHITE_QUEEN_SMALL, "black": BLACK_QUEEN_SMALL}
+    value = 900
+    score_map = [[-20,-10,-10, -5, -5,-10,-10,-20],
+                [-10,  0,  0,  0,  0,  0,  0,-10],
+                [-10,  0,  5,  5,  5,  5,  0,-10],
+                [-5,  0,  5,  5,  5,  5,  0, -5],
+                [0,  0,  5,  5,  5,  5,  0, -5],
+                [-10,  5,  5,  5,  5,  5,  0,-10],
+                [-10,  0,  5,  0,  0,  0,  0,-10],
+                [-20,-10,-10, -5, -5,-10,-10,-20]]
     def movement(self):
         options = []
         for a in [0, 1, -1]:
@@ -877,17 +848,19 @@ class Queen(Pieces):
         return options
 
 class King(Pieces):
-    def get_image(self):
-        self.value = 0
-        self.name = "king"
-        if self.colour == "white":
-            self.image = WHITE_KING_IMAGE
-            self.alpha_image = WHITE_KING_ALPHA
-            self.small_image = WHITE_KING_SMALL
-        else:
-            self.image = BLACK_KING_IMAGE
-            self.alpha_image = BLACK_KING_ALPHA
-            self.small_image = BLACK_KING_SMALL
+    name = "king"
+    image = {"white": WHITE_KING_IMAGE, "black": BLACK_KING_IMAGE}
+    alpha_image = {"white": WHITE_KING_ALPHA, "black": BLACK_KING_ALPHA}
+    small_image = {"white": WHITE_KING_SMALL, "black": BLACK_KING_SMALL}
+    value = 20000
+    score_map = [[-30,-40,-40,-50,-50,-40,-40,-30],
+                [-30,-40,-40,-50,-50,-40,-40,-30],
+                [-30,-40,-40,-50,-50,-40,-40,-30],
+                [-30,-40,-40,-50,-50,-40,-40,-30],
+                [-20,-30,-30,-40,-40,-30,-30,-20],
+                [-10,-20,-20,-20,-20,-20,-20,-10],
+                [20, 20,  0,  0,  0,  0, 20, 20],
+                [20, 30, 10,  0,  0, 10, 30, 20]]
     def movement(self):
         options = []
         for a in [0, 1, -1]:
@@ -1011,7 +984,7 @@ def draw_window():
         temp = BOARD.selected_piece
         temp_piece = BOARD.square_pieces[temp]
         temp_rect = BOARD.square_positions[temp]
-        img = temp_piece.alpha_image
+        img = temp_piece.alpha_image[temp_piece.colour]
         WIN.blit(img, (temp_rect.x, temp_rect.y))
         #blit last move
         #blit piece options
@@ -1023,14 +996,7 @@ def draw_window():
                     WIN.blit(SQUARE_IMAGE, (temp_rect.x, temp_rect.y))
     for piece in BOARD.square_pieces.values(): #blit pieces
         if piece != None:
-            WIN.blit(piece.image, (piece.rect.x, piece.rect.y))
-
-
-    #pygame.draw.line(WIN, (0,0,0), (BOARD_rect.x - LINE_WIDTH, BOARD_rect.y - LINE_WIDTH), (BOARD_rect.x + BOARD_rect.w, BOARD_rect.y - LINE_WIDTH), LINE_WIDTH * 2) #top
-    #pygame.draw.line(WIN, (0,0,0), (BOARD_rect.x - LINE_WIDTH, BOARD_rect.y + BOARD_rect.h), (BOARD_rect.x + BOARD_rect.w, BOARD_rect.y + BOARD_rect.h), LINE_WIDTH * 2) #bottom
-    #pygame.draw.line(WIN, (0,0,0), (BOARD_rect.x - LINE_WIDTH, BOARD_rect.y - LINE_WIDTH), (BOARD_rect.x - LINE_WIDTH, BOARD_rect.y + BOARD_rect.h), LINE_WIDTH * 2) #left
-    #pygame.draw.line(WIN, (0,0,0), (BOARD_rect.x  + BOARD_rect.w, BOARD_rect.y - LINE_WIDTH), (BOARD_rect.x + BOARD_rect.w, BOARD_rect.y + BOARD_rect.h), LINE_WIDTH * 2) #right
-
+            WIN.blit(piece.image[piece.colour], (piece.rect.x, piece.rect.y))
     #region text
     if BOARD.victory == False:
         turn = BOARD.turn.capitalize()
@@ -1060,9 +1026,6 @@ def main():
     pressed = False
     BOARD.get_board_options()
     START_SOUND.play()
-    #time = [hour, min, sec]
-    #clock1 = (colour, time)
-    #BOARD.store_ply()
     while run:
         count += 1
         clock.tick(FPS)
@@ -1080,9 +1043,10 @@ def main():
                     print(len(BOARD.ply_info))
                 elif event.key == pygame.K_f:
                     BOARD.flip()
-                elif event.key == pygame.K_s:
-                    BOARD.botless_turn = BOARD.turn
-                    move, val = BOARD.my_alpha_beta(1000)
+                elif event.key == pygame.K_s and FULL_AI_MODE:
+                    BOARD.turn, BOARD.alt_turn = BOARD.alt_turn, BOARD.turn
+                    BOARD.turn_num -= 1
+                    BOARD.change_turn()
                     if move != None:
                         p, m = move
                         BOARD.move_piece(BOARD.square_pieces[p], m)
@@ -1099,7 +1063,7 @@ def main():
                         BOARD.selected_piece = piece.square
                         pressed = True
                         break
-                if not pressed:
+                if BOARD.pro_rects != [] and not pressed:
                     for pro_rect in BOARD.pro_rects:
                         if pro_rect.collidepoint(pos):
                             BOARD.promote(pro_rect)
@@ -1109,13 +1073,8 @@ def main():
                 for spos, sq in BOARD.square_positions.items():
                     if BOARD.can_move and sq.collidepoint(pos) and piece.square in BOARD.board_options:
                         if spos in BOARD.board_options[piece.square]:
-                            #piece.rect.x, piece.rect.y = BOARD.square_positions[spos].x + PIECE_ADJUST, BOARD.square_positions[spos].y + PIECE_ADJUST
-                            #draw_window()
                             BOARD.move_piece(piece, spos)
                             break
-                    #else: #return piece
-                        #sq_pos = BOARD.square_positions[piece.square]
-                        #piece.rect.x, piece.rect.y = sq_pos.x + PIECE_ADJUST, sq_pos.y + PIECE_ADJUST
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3: #return piece on right click
                 pressed = False
                 BOARD.selected_piece = None
