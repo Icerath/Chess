@@ -18,7 +18,7 @@ WIDTH, HEIGHT = display_info.current_w, display_info.current_h
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 #WIN = pygame.display.set_mode((1920, 1080))
 FPS = 45
-AI_MODE = False
+AI_MODE = True
 FULL_AI_MODE = False
 AI_COLOUR = "black"
 ALPHA = 64
@@ -237,20 +237,8 @@ class Chess_Board():
         self.turn_num += 1
         self.pawn_or_cap_count += 1
         self.store_ply() # store new turn
-
-        score = 0
-        let = ["A", "B", "C", "D", "E", "F", "G", "H"]
-        for p in self.pieces:
-            x, y = p.square[0], p.square[1]
-            x = let.index(x)
-            y = int(y) - 1
-            if p.colour == "white":
-                score += p.value
-                score += p.score_map[7-y][7-x]
-            else:
-                score -= p.value
-                score -= p.score_map[y][x]
-        self.score = score
+        
+        self.get_score()
         if bot and self.no_valid_moves():
             self.score += 20000 * self.score_direction[self.alt_turn]
         if not bot:
@@ -334,7 +322,7 @@ class Chess_Board():
         self.ply_info[self.turn_num] = (
             ply_pieces, self.turn, square_pieces.copy(), self.move,
             placement, self.promoting_piece, self.can_move, self.pawn_or_cap_count,
-            self.captured_pieces)
+            self.captured_pieces.copy())
     def get_turn(self, turn_num = None):
         start_time = time.time()
         if turn_num == None:
@@ -347,6 +335,7 @@ class Chess_Board():
             self.alt_turn = "black"
         else:
             self.alt_turn = "white"
+        self.get_score()
         self.store_ply()
         self.ply_info.pop(max(self.ply_info))
         #for piece in self.pieces:
@@ -584,7 +573,7 @@ class Chess_Board():
                     w_x += 40
                 else:
                     b_x += 40
-    def my_alpha_beta(self, best_scoree, depth = 2):
+    def my_alpha_beta(self, best_scoree, depth = 3):
         my_time = round(time.time() * FPS)
         if my_time != self.prev_time and my_time % 1 == 0:
             self.prev_time = my_time
@@ -635,6 +624,21 @@ class Chess_Board():
             return (piece, move), score
         return None, self.score
         #self.move_piece(self.square_pieces[piece], move)
+
+    def get_score(self):
+        score = 0
+        let = ["A", "B", "C", "D", "E", "F", "G", "H"]
+        for p in self.pieces:
+            x, y = p.square[0], p.square[1]
+            x = let.index(x)
+            y = int(y) - 1
+            if p.colour == "white":
+                score += p.value
+                score += p.score_map[7-y][7-x]
+            else:
+                score -= p.value
+                score -= p.score_map[y][x]
+        self.score = score
 def get_square_pos(square):
         """Sets the piece's position to the center of square - INCOMPLETE"""
         let = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
@@ -885,26 +889,26 @@ class King(Pieces):
         operations = []
         #pawns
         coords = [(1, 1*i), (-1, 1*i)]
-        operations.append([Pawn, coords, True])
+        operations.append([Pawn, coords])
         #knights
         coords = [(1, 2), (2, 1), (1, -2), (-2, 1), (-1, 2), (2, -1), (-1, -2), (-2, -1)]
-        operations.append([Knight, coords, None])
+        operations.append([Knight, coords])
         #bishops
         coords = [(0, 1), (0, -1), (1, 0), (1, 1), (1, -1), (-1, 0), (-1, 1), (-1, -1)]
-        operations.append([King, coords, None])
+        operations.append([King, coords])
         lcoords = [[(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)],
                   [(1, -1), (2, -2), (3, -3), (4, -4), (5, -5), (6, -6), (7, -7)],
                   [(-1, 1), (-2, 2), (-3, 3), (-4, 4), (-5, 5), (-6, 6), (-7, 7)],
                   [(-1, -1), (-2, -2), (-3, -3), (-4, -4), (-5, -5), (-6, -6), (-7, -7)]]
         for coords in lcoords:
-            operations.append([Bishop, coords, None])
+            operations.append([Bishop, coords])
         #rooks
         lcoords = [[(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0)],
                   [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7)],
                   [(-1, 0), (-2, 0), (-3, 0), (-4, 0), (-5, 0), (-6, 0), (-7, 0)],
                   [(0, -1), (0, -2), (0, -3), (0, -4), (0, -5), (0, -6), (0, -7)]]
         for coords in lcoords:
-            operations.append([Rook, coords, None])
+            operations.append([Rook, coords])
         let = ["A", "B", "C", "D", "E", "F", "G", "H"]
         a, b = self.square[0], int(self.square[1])
         a = let.index(a) + 1
@@ -912,9 +916,9 @@ class King(Pieces):
             for coords in op[1]:
                 na, nb = coords
                 if not a + na <= 8 or not a + na >= 1:
-                    break
+                    continue
                 if not b + nb <= 8 or not b + nb >= 1:
-                    break
+                    continue
                 new_let = let[a + na - 1]
                 new_num = str(b + nb)
                 new_pos = new_let + new_num
@@ -935,8 +939,7 @@ class King(Pieces):
 #endregion            
 
 BOARD = Chess_Board()
-def valid_castle(s, rook_square): 
-    return False                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+def valid_castle(s, rook_square):                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
     rook = rook_square + s[1]
     if rook_square == "A":
         squares = ["D", "B", "C"]
