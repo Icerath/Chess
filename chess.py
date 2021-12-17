@@ -245,8 +245,8 @@ class Chess_Board():
             sound = self.check_state(sound)
             if sound != None:
                 sound.play()
-                if not bot:
-                    draw_window()
+                #if not bot:
+                #    draw_window()
         
             #for piece in self.pieces:
                 #square_positions = self.square_positions
@@ -407,11 +407,25 @@ class Chess_Board():
                     self.square_pieces[square_from] = None
                     self.square_pieces[square_to].square = square_to
                     sound = CASTLE_SOUND
-        #queening
-        if piece.name == "pawn" and spos[1] in ("1", "8"):
-            self.promoting_piece = piece
+
+
         piece.has_moved = True
-        if self.promoting_piece == None:
+        #queening
+        did_promote = False
+        if type(piece) == Pawn and piece.square[1] in ("1", "8"):
+            print(1)
+            if not bot:
+                #print(2)
+                self.promoting_piece = piece
+            else:
+                #print(3)
+                #print(self.board_options)
+                self.promoting_piece = piece
+                self.promote(Queen, bot)
+                did_promote = True
+        if self.promoting_piece == None and not bot:
+            self.change_turn(bot, sound)
+        elif bot and not did_promote:
             self.change_turn(bot, sound)
     def test_move(self, piece, spos):
         attackers = 0
@@ -479,7 +493,8 @@ class Chess_Board():
         for p in placementS:
             if placementS.count(p) >= 3:
                 return True
-    def get_promote(self, bot = False):
+    def get_promote(self):
+        #print("get_promote")
         self.can_move = False
         piece = self.promoting_piece
         square = piece.square
@@ -510,30 +525,21 @@ class Chess_Board():
         else:
             cl_pro_rects = self.black_pro_rects
         count = 0
-        if bot:
-            self.promote(self.pro_rects[3])
         for rect in self.pro_rects: #DRAW THE PIECES
             WIN.blit(cl_pro_rects[count], (rect.x, rect.y, rect.w, rect.h))
             count += 1
-    def promote(self, pro_rect):
+    def promote(self, cl_type, bot = False):
         self.can_move = True
         piece = self.promoting_piece
-
-        index = self.pro_rects.index(pro_rect)
-        if index == 0:
-            self.square_pieces[piece.square] = Queen(piece.square, piece.colour)
-        elif index == 1:
-            self.square_pieces[piece.square] = Rook(piece.square, piece.colour)
-        elif index == 2:
-            self.square_pieces[piece.square] = Knight(piece.square, piece.colour)
-        elif index == 3:
-            self.square_pieces[piece.square] = Bishop(piece.square, piece.colour)
+        self.square_pieces[piece.square] = cl_type(piece.square, piece.colour)
         new_piece = self.square_pieces[piece.square]
         new_piece.has_moved = True
+        self.pieces.remove(self.promoting_piece)
         self.pieces.append(new_piece)
         self.promoting_piece = None
         self.pro_rects == []
-        self.change_turn()
+        print(bot)
+        self.change_turn(bot)
     def update_clocks(self, bot = False):
         WIN.fill((255, 255, 255), self.clock1[2])
         WIN.fill((255, 255, 255), self.clock2[2])
@@ -573,7 +579,7 @@ class Chess_Board():
                     w_x += 40
                 else:
                     b_x += 40
-    def my_alpha_beta(self, best_scoree, depth = 3):
+    def my_alpha_beta(self, best_scoree, depth = 2):
         my_time = round(time.time() * FPS)
         if my_time != self.prev_time and my_time % 1 == 0:
             self.prev_time = my_time
@@ -594,7 +600,7 @@ class Chess_Board():
         board_options = self.board_options#.copy()
         for p in board_options:
             for m in board_options[p]:
-                if p in self.square_pieces:
+                if True:
                     abandon = False
                     self.move_piece(self.square_pieces[p], m, True)
                     if self.turn == "white":
@@ -716,8 +722,8 @@ class Pawn(Pieces):
             options.append(square)
             if not self.has_moved:
                 square = self.check_square((0, 2*i), take = False) #two moves forward and can't take
-            if square != None:
-                options.append(square)
+                if square != None:
+                    options.append(square)
         
         for x in [1,-1]: #check right and left
             square = self.check_square((x,i), take = True) #diagonally forward and must take
@@ -733,7 +739,8 @@ class Pawn(Pieces):
                 if pawn_square != None and BOARD.square_pieces[pawn_square] != None:
                     prev_from, prev_to = BOARD.move
                     if prev_from[1] in ("2","7") and prev_to[1] in ("4","5") and BOARD.square_pieces[pawn_square].name == "pawn" and pawn_square == prev_to:
-                        options.append(square)
+                        if square != None:
+                            options.append(square)
         return options
 
 class Knight(Pieces):
@@ -881,7 +888,6 @@ class King(Pieces):
         
         return options
     def get_threats(self):
-        attackers = 0
         start_time = time.time()
         i = 1
         if self.colour == "black":
@@ -912,25 +918,27 @@ class King(Pieces):
         let = ["A", "B", "C", "D", "E", "F", "G", "H"]
         a, b = self.square[0], int(self.square[1])
         a = let.index(a) + 1
+        attackers = 0
         for op in operations:
+            blocked = 0
             for coords in op[1]:
                 na, nb = coords
                 if not a + na <= 8 or not a + na >= 1:
                     continue
                 if not b + nb <= 8 or not b + nb >= 1:
                     continue
-                new_let = let[a + na - 1]
-                new_num = str(b + nb)
-                new_pos = new_let + new_num
-                if type(BOARD.square_pieces[new_pos]) == op[0]:
-                    if BOARD.square_pieces[new_pos].colour != self.colour:
-                        attackers += 1
-                if op[0] == Rook or op[0] == Bishop:
-                    if type(BOARD.square_pieces[new_pos]) == Queen:
-                        if BOARD.square_pieces[new_pos].colour != self.colour:
+                new_pos = let[a + na - 1] + str(b + nb)
+                c_piece = BOARD.square_pieces[new_pos]
+                if type(c_piece) == op[0] and c_piece.colour != self.colour:
+                    attackers += 1
+
+                    if op[0] == Rook or op[0] == Bishop:
+                        if type(c_piece) == Queen:
                             attackers += 1
-                    if BOARD.square_pieces[new_pos] != None:
+                elif op[0] == Rook or op[0] == Bishop:
+                    if c_piece != None:
                         break
+
         BOARD.get_threats_time += time.time() - start_time
         return attackers
 
@@ -1017,7 +1025,8 @@ def draw_window():
     if BOARD.victory != False:
         WIN.blit(CHESS_BOARD_ALPHA_IMAGE, (BOARD_rect.x, BOARD_rect.y))
     if BOARD.promoting_piece != None:
-        BOARD.get_promote()
+        #BOARD.get_promote()
+        pass
 
 
     pygame.display.update()
@@ -1066,9 +1075,17 @@ def main():
                         pressed = True
                         break
                 if BOARD.pro_rects != [] and not pressed:
-                    for pro_rect in BOARD.pro_rects:
+                    for index, pro_rect in enumerate(BOARD.pro_rects):
                         if pro_rect.collidepoint(pos):
-                            BOARD.promote(pro_rect)
+                            if index == 0:
+                                cl_type = Queen
+                            elif index == 1:
+                                cl_type = Rook
+                            elif index == 2:
+                                cl_type = Knight
+                            else:
+                                cly_type = Bishop
+                            BOARD.promote(cl_type)
             elif event.type == pygame.MOUSEBUTTONUP and pressed == True and event.button == 1: #if the mouse was released and is the right button
                 pressed = False
                 BOARD.selected_piece = None
