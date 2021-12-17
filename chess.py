@@ -18,7 +18,7 @@ WIDTH, HEIGHT = display_info.current_w, display_info.current_h
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 #WIN = pygame.display.set_mode((1920, 1080))
 FPS = 45
-AI_MODE = True
+AI_MODE = False
 FULL_AI_MODE = False
 AI_COLOUR = "black"
 ALPHA = 64
@@ -280,7 +280,7 @@ class Chess_Board():
                     #self.botless_turn = self.turn
                     #move, val = self.ai_test_move()
                     start_time = time.time()
-                    move, val = self.my_alpha_beta(1000)
+                    move, val = self.my_alpha_beta(50000)
                     if move != None:
                         p, m = move
                         self.move_piece(self.square_pieces[p], m)
@@ -434,11 +434,12 @@ class Chess_Board():
         self.square_pieces[spos] = piece
         piece.square = spos
 
-        pieces = [i for i in self.square_pieces.values() if i != None]# get pieces
+        #pieces = [i for i in self.square_pieces.values() if i != None and i.colour == self.turn]# get pieces
+        pieces = self.pieces
 
         valid = True
         for p in pieces:
-            if p.name == "king" and p.colour == self.turn:  
+            if type(p) == King and p.colour == self.turn:
                 attackers = p.get_threats()
                 break
         piece.square = piece_square
@@ -583,7 +584,7 @@ class Chess_Board():
                     w_x += 40
                 else:
                     b_x += 40
-    def my_alpha_beta(self, best_scoree, depth = 3):
+    def my_alpha_beta(self, best_scoree, depth = 2):
         my_time = round(time.time() * FPS)
         if my_time != self.prev_time and my_time % 1 == 0:
             self.prev_time = my_time
@@ -601,7 +602,7 @@ class Chess_Board():
         if depth == 0:
             return None, self.score
         best_l = {}
-        board_options = self.board_options.copy()
+        board_options = self.board_options#.copy()
         for p in board_options:
             for m in board_options[p]:
                 if p in self.square_pieces:
@@ -624,8 +625,6 @@ class Chess_Board():
                     best_l[score].append((p, m))
                     if self.turn == "black":
                         best_scoree = min(best_scoree, score)
-                    #elif self.turn == "white":
-                    #    best_scoree = max(best_scoree, score)
         if len(best_l) > 0:
             temp_func = max
             if turn == "black":
@@ -891,6 +890,8 @@ class King(Pieces):
         coords = [(1, 2), (2, 1), (1, -2), (-2, 1), (-1, 2), (2, -1), (-1, -2), (-2, -1)]
         operations.append([Knight, coords, None])
         #bishops
+        coords = [(0, 1), (0, -1), (1, 0), (1, 1), (1, -1), (-1, 0), (-1, 1), (-1, -1)]
+        operations.append([King, coords, None])
         lcoords = [[(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7)],
                   [(1, -1), (2, -2), (3, -3), (4, -4), (5, -5), (6, -6), (7, -7)],
                   [(-1, 1), (-2, 2), (-3, 3), (-4, 4), (-5, 5), (-6, 6), (-7, 7)],
@@ -920,9 +921,6 @@ class King(Pieces):
                 if type(BOARD.square_pieces[new_pos]) == op[0]:
                     if BOARD.square_pieces[new_pos].colour != self.colour:
                         attackers += 1
-                #elif BOARD.square_pieces[new_pos] != None:
-                #    if BOARD.square_pieces[new_pos].colour != self.colour:
-                #        print(type(BOARD.square_pieces[new_pos]))
                 if op[0] == Rook or op[0] == Bishop:
                     if type(BOARD.square_pieces[new_pos]) == Queen:
                         if BOARD.square_pieces[new_pos].colour != self.colour:
@@ -937,7 +935,8 @@ class King(Pieces):
 #endregion            
 
 BOARD = Chess_Board()
-def valid_castle(s, rook_square):                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+def valid_castle(s, rook_square): 
+    return False                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
     rook = rook_square + s[1]
     if rook_square == "A":
         squares = ["D", "B", "C"]
@@ -961,7 +960,7 @@ def valid_castle(s, rook_square):
     for pos in check_posis:
         for moves in enemy_moves:
             if pos + s[1] in moves:
-                return False
+                return False 
     return squares[-1] + s[1]
     
              
