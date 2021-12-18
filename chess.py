@@ -3,21 +3,13 @@ import os
 import random
 import time
 import sys
-#
-c_path = os.getcwd()
-if c_path[-5:] == "Saves":
-    path = path = os.path.join("\\Users","User","Documents","Python Saves","Fun Projects","Tier_1","current","pygame","chess")
-    os.chdir(path)
-else:
-    print(c_path[-6:-1])
-#import datetime
+
 pygame.init()
 
 display_info = pygame.display.Info()
 WIDTH, HEIGHT = display_info.current_w, display_info.current_h
-WIN = pygame.display.set_mode((WIDTH, HEIGHT))
-#WIN = pygame.display.set_mode((1920, 1080))
-FPS = 45
+WIN = pygame.display.set_mode((WIDTH, HEIGHT), pygame.NOFRAME, pygame.FULLSCREEN)
+FPS = 60
 AI_MODE = True
 FULL_AI_MODE = False
 AI_COLOUR = "black"
@@ -597,7 +589,7 @@ class Chess_Board():
         if depth == 0:
             return None, self.score
         best_l = {}
-        board_options = self.board_options#.copy()
+        board_options = self.board_options.copy()
         for p in board_options:
             for m in board_options[p]:
                 if True:
@@ -919,7 +911,13 @@ class King(Pieces):
         a, b = self.square[0], int(self.square[1])
         a = let.index(a) + 1
         attackers = 0
+        #if BOARD.get_threats_time == 0:
+            #for op in operations:
+                #print(op)
+        protectors = []
         for op in operations:
+            if BOARD.get_threats_time == 0:
+                print(op)
             blocked = 0
             for coords in op[1]:
                 na, nb = coords
@@ -929,15 +927,23 @@ class King(Pieces):
                     continue
                 new_pos = let[a + na - 1] + str(b + nb)
                 c_piece = BOARD.square_pieces[new_pos]
-                if type(c_piece) == op[0] and c_piece.colour != self.colour:
-                    attackers += 1
-
-                    if op[0] == Rook or op[0] == Bishop:
-                        if type(c_piece) == Queen:
+                if blocked == 0:
+                    if type(c_piece) == op[0] and c_piece.colour != self.colour:
+                        attackers += 1
+                    elif op[0] == Rook or op[0] == Bishop:
+                        if type(c_piece) == Queen and c_piece.colour != self.colour:
                             attackers += 1
-                elif op[0] == Rook or op[0] == Bishop:
+                if op[0] == Rook or op[0] == Bishop:
                     if c_piece != None:
-                        break
+                        if c_piece.colour != self.colour:
+                            break
+                        else:
+                            blocked += 1
+                            if blocked == 1:
+                                protectors.append(c_piece)
+                            elif blocked == 2:
+                                del protectors[-1]
+
 
         BOARD.get_threats_time += time.time() - start_time
         return attackers
@@ -1054,6 +1060,8 @@ def main():
                     print(len(BOARD.ply_info))
                 elif event.key == pygame.K_f:
                     BOARD.flip()
+                elif event.key == pygame.K_a:
+                    print(BOARD.board_options)
                 elif event.key == pygame.K_s and FULL_AI_MODE:
                     BOARD.turn, BOARD.alt_turn = BOARD.alt_turn, BOARD.turn
                     BOARD.turn_num -= 1
@@ -1097,8 +1105,6 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3: #return piece on right click
                 pressed = False
                 BOARD.selected_piece = None
-                #sq_pos = BOARD.square_positions[piece.square]
-                #piece.rect.x, piece.rect.y = sq_pos.x + PIECE_ADJUST, sq_pos.y + PIECE_ADJUST
 
         if pygame.mouse.get_pressed()[0] and pressed == True: #if left mouse button is being held and a piece has been pressed
             piece.rect.x, piece.rect.y = pos
