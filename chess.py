@@ -612,31 +612,39 @@ class Chess_Board():
                 else:
                     b_x += 40
   
-    def alpha_beta_white(self, alpha, beta, depth):
-        if depth == 0: return self.get_score()
+    def alpha_beta_max(self, alpha, beta, depth, initial = False):
+        if depth == 0:
+            if DEPTH % 2 == 0:
+                return -self.get_score()
+            return self.get_score()
         board_options = self.board_options
         for p in board_options:
             for m in board_options[p]:
                 self.move_piece(self.square_pieces[p], m, bot = True)
-                score = self.alpha_beta_black(alpha, beta, depth - 1)
+                score = self.alpha_beta_min(alpha, beta, depth - 1)
                 self.get_turn()
                 if score >= beta:
-                    #print("abandon white")
+                    if initial:
+                        return beta, (p, m)
                     return beta
                 if score > alpha:
                     alpha = score
+                    alpha_move = p, m
+        if initial:
+            return alpha, alpha_move
         return alpha
-
-    def alpha_beta_black(self, alpha, beta, depth, initial = False):
-        if depth == 0: return -self.get_score()
+    def alpha_beta_min(self, alpha, beta, depth, initial = False):
+        if depth == 0: 
+            if DEPTH % 2 == 0:
+                return self.get_score()
+            return -self.get_score()
         board_options = self.board_options
         for p in board_options:
             for m in board_options[p]:
                 self.move_piece(self.square_pieces[p], m, bot = True)
-                score = self.alpha_beta_white(alpha, beta, depth - 1)
+                score = self.alpha_beta_max(alpha, beta, depth - 1)
                 self.get_turn()
                 if score <= alpha:
-                    #print("abandon black")
                     if initial:
                         return alpha, (p, m)
                     return alpha
@@ -675,7 +683,7 @@ class Chess_Board():
     def start_alpha_beta(self, depth = DEPTH):
         start_time = time.time()
         board_options = self.board_options
-        score, move = self.alpha_beta_black(-float("inf"), float("inf"), depth, initial = True)
+        score, move = self.alpha_beta_max(-float("inf"), float("inf"), depth, initial = True)
         self.update_clocks(time.time() - start_time, bot = True)
         return move
     def get_score(self):
