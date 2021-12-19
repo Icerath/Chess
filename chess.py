@@ -268,7 +268,7 @@ class Chess_Board():
                     if move != None:
                         p, m = move
                         self.move_piece(self.square_pieces[p], m)
-                    do_time = False
+                    do_time = True
                     if do_time:
                         print("function calls:", self.test_count)
                         print("store turn:", self.store_time)
@@ -423,19 +423,18 @@ class Chess_Board():
         #queening
         did_promote = False
         if type(piece) == Pawn and piece.square[1] in ("1", "8"):
-            print(1)
             if not bot:
                 #print(2)
                 self.promoting_piece = piece
             else:
-                #print(3)
-                #print(self.board_options)
-                self.promoting_piece = piece
-                self.promote(Queen, bot)
-                did_promote = True
-        if self.promoting_piece == None and not bot:
-            self.change_turn(bot, sound)
-        elif bot and not did_promote:
+                #self.promoting_piece = piece
+                #self.promote(Queen, bot)   
+                print(piece.name, piece.square)
+                new_piece = Queen(piece.square, piece.colour)
+                new_piece.has_moved = True
+                self.pieces[self.pieces.index(piece)] = new_piece
+                self.square_pieces[new_piece.square] = new_piece
+        if self.promoting_piece == None:
             self.change_turn(bot, sound)
     def test_move(self, piece, spos):
         attackers = 0
@@ -471,14 +470,6 @@ class Chess_Board():
                 king = k
                 temp_bool = True
                 break
-        #if not temp_bool:
-        #    print(self.turn_num)
-            #string = ""
-            #for p in pieces:
-            #    string += f"{p.name}-{p.colour} "
-            #while True:
-            #    draw_window()
-            #print(string)
         attackers, protectors = king.get_threats(initial = True)
         for p in pieces:
             if p not in protectors and type(p) != King:
@@ -581,16 +572,16 @@ class Chess_Board():
         self.promoting_piece = None
         self.pro_rects == []
         self.change_turn(bot)
-    def update_clocks(self, bot = False):
+    def update_clocks(self, amount = 1/FPS, bot = False):
         WIN.fill((255, 255, 255), self.clock1[2])
         WIN.fill((255, 255, 255), self.clock2[2])
 
         #if not bot:
         if self.turn_num > 0:
             if self.botless_turn == "black":
-                self.clock1[1] -= 1/FPS
+                self.clock1[1] -= amount
             else:
-                self.clock2[1] -= 1/FPS
+                self.clock2[1] -= amount
         #else:
         #    self.clock2[1] -= 1/FPS
         
@@ -620,72 +611,9 @@ class Chess_Board():
                     w_x += 40
                 else:
                     b_x += 40
-    def my_alpha_beta(self, best_scoree, depth = DEPTH):
-        #my_time = round(time.time() * FPS)
-        #if my_time != self.prev_time and my_time % 1 == 0:
-        #    self.prev_time = my_time
-        #    for event in pygame.event.get():
-        #        if event.type == pygame.QUIT:
-        #            pygame.quit()
-        #            sys.exit()
-        #        elif event.type == pygame.KEYDOWN:
-        #            if event.key == pygame.K_ESCAPE:
-        #                pygame.quit()
-        #                sys.exit()
-        #    self.update_clocks(True)
-        #    pygame.display.update()
-        turn = self.turn
-        if depth == 0:
-            return None, self.score
-        best_l = {}
-        board_options = self.board_options.copy()
-        for p in board_options:
-            for m in board_options[p]:
-                if True:
-                    #if depth == DEPTH:
-                    if True:
-                        print(p, m, self.score, best_scoree, depth)
-                    abandon = False
-                    self.move_piece(self.square_pieces[p], m, True)
-                    if self.turn == "white":
-                        if self.score > best_scoree:
-                            #print(p, m, self.score, best_scoree, depth)
-                            #print("abandon", self.score)
-                            self.get_turn()
-                            print(p, m, self.score, best_scoree, depth)
-                            abandon = True
-                            #print("abandon", self.score)
-                    score = self.score
-                    #if self.victory == None:
-                    #    score = 0
-                    if not abandon:
-                        move, score = self.my_alpha_beta(-best_scoree, depth - 1)
-                    else:
-                        continue
-                    self.get_turn()
-                    #if depth == 1:
-                    if True:
-                        if score not in best_l:
-                            best_l[score] = []
-                        best_l[score].append((p, m))
-                        if self.turn == "black":
-                            print("black")
-                            best_scoree = min(best_scoree, score)
-                        elif self.turn == "white":
-                            print("white")
-                            best_scoree = max(best_scoree, score)
-        if len(best_l) > 0:
-            temp_func = max
-            if turn == "black":
-                temp_func = min
-            score = temp_func(list(best_l.keys()))
-            #piece, move = random.choice(best_l[score])
-            piece, move = random.choice(best_l[score])
-            return (piece, move), score
-        return None, self.score
-        #self.move_piece(self.square_pieces[piece], move)
+  
     def alpha_beta_white(self, alpha, beta, depth):
-        if depth == 0: return self.score
+        if depth == 0: return self.get_score()
         board_options = self.board_options
         for p in board_options:
             for m in board_options[p]:
@@ -693,12 +621,13 @@ class Chess_Board():
                 score = self.alpha_beta_black(alpha, beta, depth - 1)
                 self.get_turn()
                 if score >= beta:
+                    #print("abandon white")
                     return beta
                 if score > alpha:
                     alpha = score
         return alpha
 
-    def alpha_beta_black(self, alpha, beta, depth):
+    def alpha_beta_black(self, alpha, beta, depth, initial = False):
         if depth == 0: return -self.get_score()
         board_options = self.board_options
         for p in board_options:
@@ -707,31 +636,48 @@ class Chess_Board():
                 score = self.alpha_beta_white(alpha, beta, depth - 1)
                 self.get_turn()
                 if score <= alpha:
+                    #print("abandon black")
+                    if initial:
+                        return alpha, (p, m)
                     return alpha
                 if score < beta:
                     beta = score
+                    beta_move = p, m
+        if initial:
+            return beta, beta_move
         return beta
     def start_alpha_beta(self, depth = DEPTH):
+        start_time = time.time()
         board_options = self.board_options.copy()
         scores = {}
         for p in board_options:
             for m in board_options[p]:
                 self.move_piece(self.square_pieces[p], m, bot = True)
                 if self.turn == "white":
-                    m_func = min
                     ab_func = self.alpha_beta_white
                 else:
-                    m_func = max
                     ab_func = self.alpha_beta_black
                 score = ab_func(-float("inf"), float("inf"), depth-1)
                 self.get_turn()
                 if score not in scores:
                     scores[score] = []
                 scores[score].append((p, m))
-        print(scores)
+        if depth % 2 == 0:
+            m_func = max
+        else:
+            m_func = min
+        if len(scores) == None:
+            return None
+        print(scores, m_func)
         score = m_func(list(scores.keys()))
+        self.update_clocks(time.time() - start_time, bot = False)
         return random.choice(scores[score])
-
+    def start_alpha_beta(self, depth = DEPTH):
+        start_time = time.time()
+        board_options = self.board_options
+        score, move = self.alpha_beta_black(-float("inf"), float("inf"), depth, initial = True)
+        self.update_clocks(time.time() - start_time, bot = True)
+        return move
     def get_score(self):
         score = 0
         let = ["A", "B", "C", "D", "E", "F", "G", "H"]
@@ -1158,8 +1104,8 @@ def draw_window():
     if BOARD.victory != False:
         WIN.blit(CHESS_BOARD_ALPHA_IMAGE, (BOARD_rect.x, BOARD_rect.y))
     if BOARD.promoting_piece != None:
-        #BOARD.get_promote()
-        pass
+        BOARD.get_promote()
+        #pass
 
 
     pygame.display.update()
