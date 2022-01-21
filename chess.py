@@ -3,13 +3,14 @@ import os
 import random
 import time
 import sys
-
 pygame.init()
 
 display_info = pygame.display.Info()
 WIDTH, HEIGHT = display_info.current_w, display_info.current_h
 WIN = pygame.display.set_mode((WIDTH, HEIGHT), pygame.NOFRAME, pygame.FULLSCREEN)
 FPS = 60
+AI_UPDATE = True
+DO_TIME = True
 AI_MODE = True
 FULL_AI_MODE = False
 DEPTH = 3
@@ -136,19 +137,21 @@ DRAW_SOUND = pygame.mixer.Sound(os.path.join('Assets','Sound','GENERIC_NOTIFY.wa
 #Classes
 class Chess_Board():
     pawn_time = bishop_time = knight_time = rook_time = queen_time = king_time = 0
+    gbo_calls = 0
     def __init__(self):
         self.botless_turn = "white"
         self.prev_time = None
         self.captured_pieces = []
-        self.test_count = 0
-        self.check_square_time = 0
-        self.get_check_time = 0
-        self.check_state_time = 0
-        self.get_threats_time = 0
-        self.get_turn_time = 0
-        self.store_time = 0
-        self.gbo_time = 0
-        self.test_move_time = 0
+        if DO_TIME:
+            self.test_count = 0
+            self.check_square_time = 0
+            self.get_check_time = 0
+            self.check_state_time = 0
+            self.get_threats_time = 0
+            self.get_turn_time = 0
+            self.store_time = 0
+            self.gbo_time = 0
+            self.test_move_time = 0
         self.image = CHESS_BOARD_IMAGE
         self.score = 0
         self.square_positions = self.set_squares()
@@ -226,14 +229,15 @@ class Chess_Board():
         self.turn = self.alt_turn
         self.alt_turn = temp_turn
         self.pieces = [i for i in self.square_pieces.values() if i != None] # get pieces
-        self.get_board_options() # get movement options
+        if not bot:
+            self.get_board_options() # get movement options
         self.turn_num += 1
         self.pawn_or_cap_count += 1
         self.store_ply() # store new turn
         if not bot:
             self.is_endgame = self.get_endgame()
-        if self.is_endgame == True:
-            print("ENDGAME")
+        #if self.is_endgame == True:
+        #    print("ENDGAME")
         self.score = self.get_score()
         if bot and self.no_valid_moves():
             self.score += 20000 * self.score_direction[self.alt_turn]
@@ -241,12 +245,7 @@ class Chess_Board():
             sound = self.check_state(sound)
             if sound != None:
                 sound.play()
-                #if not bot:
-                #    draw_window()
-        
-            #for piece in self.pieces:
-                #square_positions = self.square_positions
-                #piece.rect.x, piece.rect.y = square_positions[piece.square].x + PIECE_ADJUST, square_positions[piece.square].y + PIECE_ADJUST
+
             if self.victory != False:
                 self.can_move = False
             if AI_MODE and self.can_move:
@@ -261,33 +260,11 @@ class Chess_Board():
                                 sys.exit()
                     draw_window()
                     self.og_score = self.score
-                    #self.botless_turn = self.turn
-                    #move, val = self.ai_test_move()
-                    start_time = time.time()
-                    #move, val = self.my_alpha_beta(50000)
-                    #score, move = self.alpha_beta_black(-float("inf"), float("inf"), DEPTH)
-                    print("Called AB Start")
                     move = self.start_alpha_beta()
                     if move != None:
                         p, m = move
                         self.move_piece(self.square_pieces[p], m)
-                    do_time = True
-                    if do_time:
-                        print("function calls:", self.test_count)
-                        print("store turn:", self.store_time)
-                        print("get turn time:", self.get_turn_time)
-                        print("gbo time:", self.gbo_time)
-                        print("  pawn time", self.pawn_time)
-                        print("  knight time", self.knight_time)
-                        print("  bishop time", self.bishop_time)
-                        print("  rook time", self.rook_time)
-                        print("  queen time", self.queen_time)
-                        print("  king time", self.king_time)
-                        print("test move time:", self.test_move_time)
-                        print("get threats time:", self.get_threats_time)
-                        print("check square time:", self.check_square_time)
-                        print("total time:", time.time() - start_time)
-                        print()
+                
     def get_endgame(self):
         w_minor = 0
         w_queen = 0
@@ -335,12 +312,12 @@ class Chess_Board():
         self.clock1[2].y, self.clock2[2].y = self.clock2[2].y, self.clock1[2].y
         self.pieces = pieces
     def store_ply(self):
+        if DO_TIME:
+            start_time = time.time()
         ply_pieces = []
-        start_time = time.time()
         for piece in self.pieces:
             ply_pieces.append(type(piece)(piece.square, piece.colour))
             ply_pieces[-1].has_moved = piece.has_moved
-        self.store_time += time.time() - start_time
         square_pieces = {}
         for sq in self.square_positions:
             square_pieces[sq] = None
@@ -357,12 +334,12 @@ class Chess_Board():
             ply_pieces, self.turn, square_pieces.copy(), self.move,
             placement, self.promoting_piece, self.can_move, self.pawn_or_cap_count,
             self.captured_pieces.copy())
-    def get_turn(self, turn_num = None):
-        start_time = time.time()
-        if turn_num == None:
-            self.turn_num -= 1
-        else:
-            self.turn_num = turn_num
+        if DO_TIME:
+            self.store_time += time.time() - start_time
+    def get_turn(self):
+        if DO_TIME:
+            start_time = time.time()
+        self.turn_num -= 1
         self.pro_rects = []
         self.pieces, self.turn, self.square_pieces, self.move, placement, self.promoting_piece, self.can_move, self.pawn_or_cap_count, self.captured_pieces = self.ply_info[self.turn_num]
         if self.turn == "white":
@@ -371,20 +348,19 @@ class Chess_Board():
             self.alt_turn = "white"
         self.score = self.get_score()
         self.store_ply()
-        self.ply_info.pop(max(self.ply_info))
-        #for piece in self.pieces:
-        #    square_positions = self.square_positions
-        #    piece.rect.x, piece.rect.y = square_positions[piece.square].x + PIECE_ADJUST, square_positions[piece.square].y + PIECE_ADJUST
-        self.get_turn_time += time.time() - start_time
+        #self.ply_info.pop(max(self.ply_info))
+        if DO_TIME:
+            self.get_turn_time += time.time() - start_time
     def check_state(self, sound = MOVE_SOUND):
-        start_time = time.time()
+        if DO_TIME:
+            start_time = time.time()
         get_check = self.get_check()
         valid_moves = self.no_valid_moves()
         if not get_check and valid_moves:
             sound = DRAW_SOUND
             self.victory = None
         elif valid_moves:
-            sound = CHECKMATE_SOUND
+            #sound = CHECKMATE_SOUND
             self.victory = self.alt_turn
         elif get_check:
             sound = CHECK_SOUND
@@ -394,18 +370,13 @@ class Chess_Board():
         if self.pawn_or_cap_count >= 50:
             sound = DRAW_SOUND
             self.victory = None
-        self.check_state_time += time.time() - start_time
+        if DO_TIME:
+            self.check_state_time += time.time() - start_time
         return sound
     def move_piece(self, piece, spos, bot = False):
         sq = self.square_positions[spos]
         sound = MOVE_SOUND
-        #piece.rect.x, piece.rect.y = sq.x + PIECE_ADJUST, sq.y + PIECE_ADJUST
         to_piece = self.square_pieces[spos]
-        #if type(to_piece) == King:
-        #    print(self.board_options)
-        #    while True:
-        #        pygame.display.update()
-        #        draw_window()
         self.square_pieces[piece.square] = None
         if piece.name == "pawn": #reset pocc
             self.pawn_or_cap_count = 0
@@ -457,7 +428,6 @@ class Chess_Board():
             else:
                 #self.promoting_piece = piece
                 #self.promote(Queen, bot)   
-                print(piece.name, piece.square)
                 new_piece = Queen(piece.square, piece.colour)
                 new_piece.has_moved = True
                 self.pieces[self.pieces.index(piece)] = new_piece
@@ -465,33 +435,35 @@ class Chess_Board():
         if self.promoting_piece == None:
             self.change_turn(bot, sound)
     def test_move(self, piece, spos):
+        if DO_TIME:
+            start_time = time.time()
         attackers = 0
-        start_time = time.time()
         piece_square = piece.square
         to_piece = self.square_pieces[spos]
         #move pieces
         self.square_pieces[piece.square] = None
         self.square_pieces[spos] = piece
         piece.square = spos
-
-        #pieces = [i for i in self.square_pieces.values() if i != None and i.colour == self.turn]# get pieces
         pieces = self.pieces
 
         valid = True
         for p in pieces:
-            if type(p) == King and p.colour == self.turn:
+            if p.colour == self.turn and type(p) == King:
                 attackers = p.get_threats(initial = False)
                 break
         piece.square = piece_square
         self.square_pieces[piece.square] = piece #from prev pos
         self.square_pieces[spos] = to_piece
-        self.test_move_time += time.time() - start_time
+        if DO_TIME:
+            self.test_move_time += time.time() - start_time
         return attackers
     def get_board_options(self):
-        self.test_count += 1
-        start_time = time.time()
+        self.gbo_calls += 1
+        if DO_TIME:
+            start_time = time.time()
         board_options = {}
         pieces = [p for p in self.pieces if p.colour == self.turn]
+        #print(pieces)
         temp_bool = False
         for k in pieces:
             if type(k) == King:
@@ -500,8 +472,8 @@ class Chess_Board():
                 break
         attackers, protectors = king.get_threats(initial = True)
         for p in pieces:
-            if p not in protectors and type(p) != King:
-                board_options[p.square] = p.movement()
+                if p not in protectors and type(p) != King:
+                    board_options[p.square] = p.movement()
         if attackers == 0:
             for piece in protectors + [king]:
                 board_options[piece.square] = []
@@ -517,27 +489,33 @@ class Chess_Board():
                     if attackers == 0:
                         board_options[piece.square].append(move)
         self.board_options = board_options
-        #for piece in pieces:
-        #    if piece.colour != self.turn:
-        #        continue
-        #    sq = piece.square
-        #    board_options[sq] = []
-        #    for move in piece.movement():
-        #        attackers = self.test_move(piece, move)
-        #        if attackers == 0:
-        #            board_options[sq].append(move)
-        #self.board_options = board_options
-        self.gbo_time += time.time() - start_time
+        if DO_TIME:
+            self.gbo_time += time.time() - start_time
+    def get_move_options(self):
+        board_options = self.board_options
+        captures= []
+        non_captures = []
+
+        for p in board_options:
+            for m in board_options[p]:
+                if m in board_options and self.square_pieces[m].colour != self.square_pieces[p].colour:
+                    captures.append((p, m))
+                else:
+                    non_captures.append((p, m))
+        return captures + non_captures
     def get_check(self):
         """return True if turn's team is giving check"""
-        start_time = time.time()
+        if DO_TIME:
+            start_time = time.time()
         board_options = self.board_options
         for piece in self.pieces:
             if type(piece) == King and piece.colour == self.turn:
                 if piece.get_threats(initial = False) > 0:
-                    self.get_check_time += time.time() - start_time
+                    if DO_TIME:
+                        self.get_check_time += time.time() - start_time
                     return True
-        self.get_check_time += time.time() - start_time
+        if DO_TIME:
+            self.get_check_time += time.time() - start_time
         return False
     def no_valid_moves(self):
         """returns True if turn is in checkmate"""
@@ -555,7 +533,6 @@ class Chess_Board():
             if placementS.count(p) >= 3:
                 return True
     def get_promote(self):
-        #print("get_promote")
         self.can_move = False
         piece = self.promoting_piece
         square = piece.square
@@ -609,7 +586,6 @@ class Chess_Board():
             if bot:
                 if AI_COLOUR == "black":
                     self.clock1[1] -= amount
-                    #print(1)
                 else:
                     self.clock[2] -= amount
             else:
@@ -647,111 +623,51 @@ class Chess_Board():
                 else:
                     b_x += 40
   
-    #def alpha_beta_max(self, alpha, beta, best_move, best_score, depth_left, initial = False):
-    #    if depth_left == 0:
-    #        #if DEPTH % 2 == 0:
-    #        return self.get_score()
-    #        #return self.get_score()
-    #    board_options = self.board_options
-    #    has_moved = False
-    #    for p in board_options:
-    #        for m in board_options[p]:
-    #            has_moved = True
-    #            self.move_piece(self.square_pieces[p], m, bot = True)
-    #            score = self.alpha_beta_min(alpha, beta, best_move, best_score, depth_left - 1)
-    #            self.get_turn()
-    #            if score >= beta:
-    #                print(p, m, score, depth_left, "cut", best_move, best_score)
-    #                if initial:
-    #                    return beta, (p, m)
-    #                return beta
-    #            if score > alpha:
-    #                if alpha == score:
-    #                    print(p, m, score, depth_left, "=", best_move, best_score)
-    #                else:
-    #                    print(p, m, score, depth_left, ">", best_move, best_score)
-    #                alpha = score
-    #                alpha_move = p, m
-    #                if initial:
-    #                    best_move = alpha_move
-    #                    best_score = alpha
-    #            elif score < beta and score < alpha:
-    #                print(p, m, score, depth_left, "<<", best_move, best_score)
-    #    if initial:
-    #        return alpha, alpha_move
-    #    return alpha
-    #def alpha_beta_min(self, alpha, beta, best_move, best_score, depth_left, initial = False):
-    #    if depth_left == 0: 
-    #        #if DEPTH % 2 == 0:
-    #        return -self.get_score()
-    #        #return -self.get_score()
-    #    board_options = self.board_options
-    #    for p in board_options:
-    #        for m in board_options[p]:
-    #            self.move_piece(self.square_pieces[p], m, bot = True)
-    #            score = self.alpha_beta_max(alpha, beta, best_move, best_score, depth_left - 1)
-    #            self.get_turn()
-    #            if score <= alpha:
-    #                print(p, m, score, depth_left, "cut", best_move, best_score)
-    #                if initial:
-    #                    return alpha, (p, m)
-    #                return alpha
-    #            if score < beta:
-    #                if score == beta:
-    #                    print(p, m, score, depth_left, "=", best_move, best_score)
-    #                else:
-    #                    print(p, m, score, depth_left, "<", best_move, best_score)
-    #                beta = score
-    #                beta_move = p, m
-    #            elif score > alpha and score > beta:
-    #                print(p, m, score, depth_left, ">>", best_move, best_score)
-    #    if initial:
-    #        return beta, beta_move  
-    #   return beta
-    #def start_alpha_beta(self, depth_left = DEPTH):
-    #    start_time = time.time()
-    #    board_options = self.board_options.copy()
-    #    scores = {}
-    #    for p in board_options:
-    #        for m in board_options[p]:
-    #           self.move_piece(self.square_pieces[p], m, bot = True)
-    #            if self.turn == "white":
-    #                ab_func = self.alpha_beta_white
-    #            else:
-    #                ab_func = self.alpha_beta_black
-    #            score = ab_func(-float("inf"), float("inf"), depth_left-1)
-    #            self.get_turn()
-    #            if score not in scores:
-    #                scores[score] = []
-    #            scores[score].append((p, m))
-    #    if depth_left % 2 == 0:
-    #        m_func = max
-    #    else:
-    #        m_func = min
-    #    if len(scores) == None:
-    #        return None
-    #    print(scores, m_func)
-    #    score = m_func(list(scores.keys()))
-    #    self.update_clocks(time.time() - start_time, bot = False)
-    #    return random.choice(scores[score])
-    
-    
-    
-    def start_alpha_beta(self, depth_left = DEPTH):
-        #start_time = time.time()
-        board_options = self.board_options
-        score, move = self.alpha_beta_max(-float("inf"), float("inf"), None, None, depth_left, initial = True)
-        #self.update_clocks(time.time() - start_time, bot = True)
-        return move
+
     def start_alpha_beta(self, depth_left = DEPTH):
         start_time = time.time()
         inf = float("inf")
         score, move = self.negamax(-inf, inf, depth_left, True)
+        if DO_TIME:
+            print("function calls:", self.test_count)
+            print("gbo calls", self.gbo_calls)
+            print("store turn:", self.store_time)
+            print("get turn time:", self.get_turn_time)
+            print("gbo time:", self.gbo_time)
+            print("  pawn time", self.pawn_time)
+            print("  knight time", self.knight_time)
+            print("  bishop time", self.bishop_time)
+            print("  rook time", self.rook_time)
+            print("  queen time", self.queen_time)
+            print("  king time", self.king_time)
+            print("test move time:", self.test_move_time)
+            print("get threats time:", self.get_threats_time)
+            print("get check time", self.get_check_time)
+            print("check square time:", self.check_square_time)
+            print("total time:", time.time() - start_time)
+            print()
+            self.test_count = 0
+            self.gbo_calls = 0
+            self.store_time = 0
+            self.get_turn_time = 0
+            self.gbo_time = 0
+            self.pawn_time = 0
+            self.knight_time = 0
+            self.bishop_time = 0
+            self.rook_time = 0
+            self.queen_time = 0
+            self.king_time = 0
+            self.test_move_time = 0
+            self.get_threats_time = 0
+            self.get_check_time = 0
+            self.check_square_time = 0
         self.update_clocks(time.time()-start_time)
         return move
 
     def negamax(self, alpha, beta, depth_left = DEPTH, initial = False):
-        if self.last_updated + 1/5 < time.time():
+        if DO_TIME:
+            self.test_count += 1
+        if AI_UPDATE and self.last_updated + 1/5 < time.time():
             self.last_updated = time.time()
             time_since = time.time() - self.last_updated
             for e in pygame.event.get():
@@ -762,14 +678,16 @@ class Chess_Board():
                     if e.key == pygame.K_ESCAPE:
                         pygame.quit()
                         sys.exit()
-            self.update_clocks(time_since, bot = True)
-            #draw_window(bot = True)
+            #self.update_clocks(time_since, bot = True)
             pygame.display.update()
         if depth_left == 0: return self.get_score()
+        self.get_board_options()
         board_options = self.board_options
         best_move = None
-        for p in board_options:
-            for m in board_options[p]:
+        
+        move_options = self.get_move_options()
+        for move in move_options:
+                p, m = move
                 self.move_piece(self.square_pieces[p], m, bot = True)
                 score = -self.negamax(-beta, -alpha, depth_left-1)
                 self.get_turn()
@@ -806,6 +724,8 @@ class Chess_Board():
                 score -= p.value
                 score -= score_map[y][x]
         return score
+def quiet_seach(self):
+    pass
 def get_square_pos(square):
         """Sets the piece's position to the center of square - INCOMPLETE"""
         let = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
@@ -849,11 +769,13 @@ class Pieces():
         new_pos = new_let + new_num
         if BOARD.square_pieces[new_pos] == None: #if square is empty
             if take != True: #and if this move doesn't have to take
-                BOARD.check_square_time += time.time() - start_time
+                if DO_TIME:
+                    BOARD.check_square_time += time.time() - start_time
                 return new_pos #return square as option
         elif BOARD.square_pieces[new_pos].colour != self.colour: #if the square's piece's colour is not equal to our colour
             if take != False:#and this move can take
-                BOARD.check_square_time += time.time() - start_time
+                if DO_TIME:
+                    BOARD.check_square_time += time.time() - start_time
                 return new_pos #return square as option
         
     
@@ -872,7 +794,8 @@ class Pawn(Pieces):
  		         [5, 10, 10,-20,-20, 10, 10,  5],
  		         [0,  0,  0,  0,  0,  0,  0,  0]]
     def movement(self):
-        start_time = time.time()
+        if DO_TIME:
+            start_time = time.time()
         options = []
 
         i = 1
@@ -903,7 +826,8 @@ class Pawn(Pieces):
                     if prev_from[1] in ("2","7") and prev_to[1] in ("4","5") and BOARD.square_pieces[pawn_square].name == "pawn" and pawn_square == prev_to:
                         if square != None:
                             options.append(square)
-        BOARD.pawn_time += time.time() - start_time
+        if DO_TIME:
+            BOARD.pawn_time += time.time() - start_time
         return options
 
 class Knight(Pieces):
@@ -932,7 +856,8 @@ class Knight(Pieces):
                 square = self.check_square((b, a))
                 if square != None:
                     options.append(square)
-        BOARD.knight_time += time.time() - start_time
+        if DO_TIME:
+            BOARD.knight_time += time.time() - start_time
         return options
 
 
@@ -951,7 +876,8 @@ class Bishop(Pieces):
                 [-10,  5,  0,  0,  0,  0,  5,-10],
                 [-20,-10,-10,-10,-10,-10,-10,-20]]
     def movement(self):
-        start_time = time.time()
+        if DO_TIME:
+            start_time = time.time()
         options = []
         for a in [1,-1]:
             for b in [1,-1]:
@@ -963,7 +889,8 @@ class Bishop(Pieces):
                     square = self.check_square((a*i, b*i), take = False)
                     if square == None:
                         break
-        BOARD.bishop_time += time.time() - start_time
+        if DO_TIME:
+            BOARD.bishop_time += time.time() - start_time
         return options
 
 class Rook(Pieces):
@@ -981,7 +908,8 @@ class Rook(Pieces):
                 [-5,  0,  0,  0,  0,  0,  0, -5],
                 [0,  0,  0,  5,  5,  0,  0,  0]]
     def movement(self):
-        start_time = time.time()
+        if DO_TIME:
+            start_time = time.time()
         options = []
         for x in [(1, 0), (0, 1), (-1, 0), (0, -1)]:
             a, b = x
@@ -993,7 +921,8 @@ class Rook(Pieces):
                 square = self.check_square((i*a, i*b), take = False)
                 if square == None:
                     break
-        BOARD.rook_time += time.time() - start_time
+        if DO_TIME:
+            BOARD.rook_time += time.time() - start_time
         return options
 
 class Queen(Pieces):
@@ -1011,7 +940,8 @@ class Queen(Pieces):
                 [-10,  0,  5,  0,  0,  0,  0,-10],
                 [-20,-10,-10, -5, -5,-10,-10,-20]]
     def movement(self):
-        start_time = time.time()
+        if DO_TIME:
+            start_time = time.time()
         options = []
         for a in [0, 1, -1]:
             for b in [0, 1, -1]:
@@ -1024,7 +954,8 @@ class Queen(Pieces):
                         square = self.check_square((i*a, i*b), take = False)
                         if square == None:
                             break
-        BOARD.queen_time += time.time() - start_time
+        if DO_TIME:
+            BOARD.queen_time += time.time() - start_time
         return options
 
 class King(Pieces):
@@ -1050,7 +981,8 @@ class King(Pieces):
                         [-30,-30,  0,  0,  0,  0,-30,-30],
                         [-50,-30,-30,-30,-30,-30,-30,-50]]
     def movement(self):
-        start_time = time.time()
+        if DO_TIME:
+            start_time = time.time()
         options = []
         for a in [0, 1, -1]:
             for b in [0, 1, -1]:
@@ -1060,14 +992,17 @@ class King(Pieces):
                         continue
                     options.append(square)
         #check to see if the king can castle
-        for a in ["A", "H"]:
-            square = valid_castle(self.square, a)
-            if square != None and square != False:
-                options.append(square)
-        BOARD.king_time += time.time() - start_time
+        if self.get_threats() == 0:
+            for a in ["A", "H"]:
+                square = valid_castle(self.square, a)
+                if square != None and square != False:
+                    options.append(square)
+        if DO_TIME:
+            BOARD.king_time += time.time() - start_time
         return options
     def get_threats(self, initial = False):
-        start_time = time.time()
+        if DO_TIME:
+            start_time = time.time()
         i = 1
         if self.colour == "black":
             i = -1
@@ -1098,9 +1033,6 @@ class King(Pieces):
         a, b = self.square[0], int(self.square[1])
         a = let.index(a) + 1
         attackers = 0
-        #if BOARD.get_threats_time == 0:
-            #for op in operations:
-                #print(op)
         protectors = []
         for op in operations:
             blocked = 0
@@ -1133,12 +1065,8 @@ class King(Pieces):
                         break
                     elif blocked == 2:
                         break
-        #print(protectors)
-        #for p in protectors:
-        #    print(p.square)
-
-
-        BOARD.get_threats_time += time.time() - start_time
+        if DO_TIME:
+            BOARD.get_threats_time += time.time() - start_time
         if initial:
             return attackers, protectors
         return attackers
@@ -1148,7 +1076,8 @@ class King(Pieces):
 #endregion            
 
 BOARD = Chess_Board()
-def valid_castle(s, rook_square):                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+def valid_castle(s, rook_square):
+    start_time = time.time()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
     rook = rook_square + s[1]
     if rook_square == "A":
         squares = ["D", "B", "C"]
@@ -1157,13 +1086,21 @@ def valid_castle(s, rook_square):
         squares = ["F","G"]
         check_posis = ("F","G")
     if rook not in BOARD.square_pieces:
+        if DO_TIME:
+            BOARD.get_check_time += time.time() - start_time
         return False
     elif BOARD.square_pieces[rook] == None:
+        if DO_TIME:
+            BOARD.get_check_time += time.time() - start_time
         return False
     elif BOARD.square_pieces[s].has_moved or BOARD.square_pieces[rook].has_moved:
+        if DO_TIME:
+            BOARD.get_check_time += time.time() - start_time
         return False
     for sq in squares:
         if BOARD.square_pieces[sq + s[1]] != None:
+            if DO_TIME:
+                BOARD.get_check_time += time.time() - start_time
             return False
     enemy_moves = []
     for p in BOARD.pieces:
@@ -1172,7 +1109,11 @@ def valid_castle(s, rook_square):
     for pos in check_posis:
         for moves in enemy_moves:
             if pos + s[1] in moves:
+                if DO_TIME:
+                    BOARD.get_check_time += time.time() - start_time
                 return False 
+    if DO_TIME:
+        BOARD.get_check_time += time.time() - start_time
     return squares[-1] + s[1]
     
              
@@ -1199,7 +1140,7 @@ def draw_window(bot = False):
         temp_rect = BOARD.square_positions[temp]
         img = temp_piece.alpha_image[temp_piece.colour]
         WIN.blit(img, (temp_rect.x, temp_rect.y))
-        #blit last move
+        #blit last move 
         #blit piece options
         if temp_piece.square in BOARD.board_options:
             for temp_sq in BOARD.board_options[temp_piece.square]:
